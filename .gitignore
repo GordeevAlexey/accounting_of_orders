@@ -1,0 +1,11 @@
+__pycache__/
+**/__pycache__/
+env
+*.xlsx
+*.xls
+*.doc
+*.docx
+*.log
+.env
+income/
+*.db
