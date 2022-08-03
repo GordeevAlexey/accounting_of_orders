@@ -53,21 +53,22 @@ class DBConnection:
 
     @classmethod
     @cursor_add
-    def add_user(cls, cursor, *args):
-        table = Table('USERS')
-        q = Query.into(table).insert(uuid4(), *args)
+    def get_orders(cls, cursor):
+        table = Table('ORDERS')
+        q = Query.from_(table).select(table.star)
         cursor.execute(str(q))
+        result = cursor.fetchall()
         cursor.close()
-        print(f"Пользователь добавлен {args[0]}")
+        return result
 
     @classmethod
     @cursor_add
-    def add_department(cls, cursor, department): 
-        table = Table('DEPARTMENT')
-        q = Query.into(table).insert(uuid4(), department)
+    def add_order(cls, cursor, *args):
+        table = Table('ORDERS')
+        q = Query.into(table).insert(uuid4(), *args)
         cursor.execute(str(q))
         cursor.close()
-        print(f"Подразделение добавлено {department}")
+        print(f"Поручение добавлено")
 
     @classmethod
     @cursor_add
@@ -77,15 +78,7 @@ class DBConnection:
         cursor.close()
         return result
 
-    @classmethod
-    @cursor_add
-    def add_status(cls, cursor, status): 
-        table = Table('STATUS')
-        q = Query.into(table).insert(uuid4(), status)
-        cursor.execute(str(q))
-        cursor.close()
-        print(f"Статус добавлен {status}")
 
-
-    
+class FetchDataFormatter:
+    pass
 

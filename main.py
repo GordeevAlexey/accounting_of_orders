@@ -1,4 +1,6 @@
+from utils import get_orders
 from database.db import DBConnection
+from datetime import datetime
 
 
 
@@ -7,9 +9,5 @@ from database.db import DBConnection
 
 
 if __name__ == "__main__":
-        # fio='Сидорович Никита Сергеевич',
-        # usr_login='sidorovich_ns',
-        # department='УИТ',
-        # email='sidorovich_ns@akcept.ru',
-        # phone='89137127036'
-        DBConnection.add()
+#     print(DBConnection.get_orders())
+    print(get_orders())
