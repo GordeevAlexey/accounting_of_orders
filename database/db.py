@@ -78,6 +78,14 @@ class DBConnection:
         cursor.close()
         return result
 
+    @classmethod
+    @cursor_add
+    def update_order(cls, cursor, uuid, status):
+        table = Table('ORDERS')
+        q = Query.update(table).set(table.status_code, status).where(table.id == uuid)
+        cursor.execute(str(q))
+        cursor.close()
+
 
 class FetchDataFormatter:
     pass

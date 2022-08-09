@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавление поручения</title>
+    <link href="style.css" rel="stylesheet" type="text/css">
+    <style>
+            body {
+            background-color: white
+                }
+
+            img {
+            width: 250px;
+            align: center;
+                }
+
+            p {
+            font-family: sans-serif;
+            font-size: 30px;
+            text-align: center
+                }
+
+            form {
+                text-align:center;
+                 }
+
+            input, button, select {
+                width:315px;
+                padding:18px;
+                border-radius: 10px;
+                border:0;
+                box-shadow:0 0 15px 2px rgba(60,74,123,.7);
+                border-bottom:1px ;
+                box-sizing: border-box;
+                margin:8px
+                }
+
+            textarea{
+                font-family: Verdana;
+                font-size: 30;
+                width:1660px;
+                height:400px;
+                padding:18px;
+                border-radius: 10px;
+                border:0;
+                box-shadow:0 0 15px 2px rgba(60,74,123,.7);
+                border-bottom:1px ;
+                box-sizing: border-box;
+                margin:8px
+                }
+
+            input:hover, button:hover {
+            box-shadow:0 0 15px 2px rgba(60,123,68,.7);
+            outline:0;
+                }
+
+            input:hover, button:focus {
+            box-shadow:0 0 15px 2px rgba(60,123,68,.7);
+            outline:0;
+                }
+
+</style>
+
+</head>
+<body>
+
+    <div class="container">
+        <form action="/add_task" method="post">
+            <input name="title" type="text" placeholder="Тема">
+            <input name="daedline" type="date" placeholder="Дата исполнения">
+
+            <select name="initiator" id="initiator">
+                    <option value="Инициатор" selected="selected">Инициатор</option>
+                    <option value="Терехина Елена Сергеевна">Терехина Елена Сергеевна</option>
+                    <option value="Косенкова Ирина Александровна">Косенкова Ирина Александровна</option>
+                    <option value="Красильникова Татьяна Владимировна">Красильникова Татьяна Владимировна</option>
+                    <option value="Шачнева Татьяна Алексеевна">Шачнева Татьяна Алексеевна</option>
+                    <option value="Локоть Марина Борисовна">Локоть Марина Борисовна</option>
+            </select>
+
+            <select name="employee" id="employee">
+                    <option value="Исполнитель" selected="selected">Исполнитель</option>
+                    <option value="Захаров Сергей Александрович">Захаров Сергей Александрович</option>
+                    <option value="Гордеев Алексей Николаевич">Гордеев Алексей Николаевич</option>
+                    <option value="Сидорович Никита Сергеевич">Сидорович Никита Сергеевич</option>
+                    <option value="Мусатов Вадим Юрьевич">Мусатов Вадим Юрьевич</option>
+            </select>
+
+            <select name="department" id="department">
+                    <option value="Департамент" selected="selected">Департамент</option>
+                    <option value="УИТ">УИТ</option>
+                    <option value="АХУ">АХУ</option>
+                    <option value="ОФМ">ОФМ</option>
+                    <option value="ОПиТ">ОПиТ</option>
+                    <option value="ОКККиИП">ОКККиИП</option>
+            </select>
+
+            <br><br>
+            <textarea name="task_txt" type="text" placeholder="Текст поручения"></textarea>
+            <br>
+            <input type="submit" name="submit" value="Сохранить">
+            </form>
+    </div>
+</body>
+</html>

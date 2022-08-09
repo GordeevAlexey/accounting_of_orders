@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Система учета поручений</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/css/tabulator.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/css/bootstrap/tabulator_bootstrap4.min.css" rel="stylesheet">
+
+    <style>
+            <style>
+
+                body {
+                background-color: white
+                 }
+
+            img {
+            width: 250px;
+            align: center;
+                }
+
+            p {
+            font-family: sans-serif;
+            font-size: 30px;
+            text-align: center
+            }
+
+            form {
+                text-align:center;
+                 }
+
+            .btn, input, select {
+                width:400px;
+                padding:18px;
+                border-radius: 10px;
+                border:0;
+                box-shadow:0 0 15px 2px rgba(60,74,123,.7);
+                border-bottom:1px ;
+                box-sizing: border-box;
+                margin:8px
+            }
+
+            textarea{
+                font-family: Verdana;
+                font-size: 30;
+                width:1660px;
+                height:400px;
+                padding:18px;
+                border-radius: 10px;
+                border:0;
+                box-shadow:0 0 15px 2px rgba(60,74,123,.7);
+                border-bottom:1px ;
+                box-sizing: border-box;
+                margin:8px
+            }
+
+            button:hover, button:hover {
+            box-shadow:0 0 15px 2px rgba(60,123,68,.7);
+            outline:0;
+            }
+
+            input:hover, button:focus {
+            box-shadow:0 0 15px 2px rgba(60,123,68,.7);
+            outline:0;
+            }
+
+</style>
+
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/js/tabulator.min.js"></script>
+<script type="text/javascript" src="http://192.168.200.168:8004/sandbox/static/tabulator.js"></script>
+
+<body>
+<button class="btn" id="add_new" onclick="document.location='http://192.168.200.168:8004/open_form'">Добавить поручение</button>
+
+<div id="table"></div>
+
+<div class="container">
+    <form action="/update_task" method="post">
+            <input name="title" id="txt_close" type="text" placeholder="Введите текст закрытия">
+            <select name="department" id="status">
+                        <option value="" selected="selected">Статус закрытия</option>
+                        <option value="Закрыто">Закрыто</option>
+                        <option value="Отменено">Отменено</option>
+            </select>
+    <!--    <button class="btn" id="close_task" onclick="document.location='http://192.168.200.168:8004/open_form'">Закрыть поручение</button>-->
+        <input type="submit" name="submit" value="Закрыть поручение">
+    </form>
+</div>>
+
+<script>
+    $(document).ready(function() {
+    var url = 'http://192.168.200.168:8004/get_data';
+
+    $.get(url, function(response) {
+        var table = new Tabulator('#table', {
+        pagination: 'local',
+        paginationSize: 10,
+        data: JSON.parse(response),
+        layout: 'fitColumns',
+        columns: [
+                    { title: 'Название задачи', field: 'title', width: 300 },
+                    { title: 'Инициатор', field: 'initiator' },
+                    { title: 'Исполнитель', field: 'employee' },
+                    { title: 'Описание задачи', field: 'task_txt' },
+                    { title: 'Исполнить до...', field: 'deadline_date' },
+                    { title: 'Дата закрытия', field: 'close_date' },
+                    { title: 'Статус поручния', field: 'status_code' },
+                    { title: 'Комментарии закрытия', field: 'text_close' }
+
+                 ],
+
+        rowClick:function(e, row){
+            if (row.getData().status_code == 'В работе') {
+                $("form").show(300)
+            } else {
+              $("form").hide(300)
+            }
+}
+});
+    });
+});
+
+
+</script>
+
+</body>
+
+
