@@ -1,13 +1,15 @@
 CREATE TABLE IF NOT EXISTS ORDERS (
     id UID UNIQUE PRIMARY KEY NOT NULL,
-    title TEXT NOT NULL,
-    creator TEXT NOT NULL,
-    initiator TEXT NOT NULL,
-    employee TEXT NOT NULL,
-    department TEXT NOT NULL,
+    deleted boolean NOT NULL,
     create_date date NOT NULL,
-    deadline date,
-    close_date date,
+    update_date date,
+    issue_type TEXT NOT NULL,
+    initiator TEXT NOT NULL,
+    title TEXT NOT NULL,
+    issue_date date,
+    employee TEXT NOT NULL,
     status_code TEXT NOT NULL,
-    text_close TEXT NOT NULL
+    close_date date,
+    comment TEXT NOT NULL,
+    reference TEXT
 );

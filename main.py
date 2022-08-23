@@ -9,6 +9,9 @@ from starlette.requests import Request
 from starlette.templating import Jinja2Templates
 from send_email import Email
 from email.mime.text import MIMEText
+from reports import Report
+from fastapi.responses import StreamingResponse
+
 
 app = FastAPI()
 app.add_middleware(
@@ -76,9 +79,15 @@ async def update(request: Request,
     return templates.TemplateResponse('index.html', {'request': request})
 
 
-@app.get("/get_data")
+@app.get("/get_data", response_description='xlsx')
 async def get_task():
-    return get_orders()
+    #Скачивает отчет
+    r = Report()
+    r.get_report()
+    headers = {
+        'Content-Disposition': 'attachment; filename="report.xlsx"'
+    }
+    return StreamingResponse(r.output, headers=headers)
 
 
 @app.get("/open_form")
@@ -93,6 +102,6 @@ async def start(request: Request):
 
 if __name__ == "__main__":
     uvicorn.run("main:app",
-                host="192.168.200.168",
+                host="192.168.200.92",
                 port=8004,
                 reload=True)

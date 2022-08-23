@@ -2,6 +2,7 @@ import sqlite3
 from functools import wraps
 from pypika import Query, Table, Field
 from uuid import uuid4
+from datetime import datetime
 
 #sqlite3.IntegrityError: UNIQUE constraint failed: USERS.email
 
@@ -65,7 +66,19 @@ class DBConnection:
     @cursor_add
     def add_order(cls, cursor, *args):
         table = Table('ORDERS')
-        q = Query.into(table).insert(uuid4(), *args)
+        q = Query.into(table).columns(
+            'id', 'deleted',
+            'create_date', 'update_date',
+            'issue_type', 'initiator',
+            'title', 'issue_date',
+            'employee', 'status_code',
+            'close_date', 'comment',
+            'reference' 
+        )\
+            .insert(
+                uuid4(), False, datetime.now().strftime('%d.%m.%Y %H:%M:%S'),
+                None, *args
+        )
         cursor.execute(str(q))
         cursor.close()
         print(f"Поручение добавлено")
