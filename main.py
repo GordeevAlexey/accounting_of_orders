@@ -103,5 +103,6 @@ async def start(request: Request):
 if __name__ == "__main__":
     uvicorn.run("main:app",
                 host="192.168.200.92",
+                # headers=[('server', 'top4ik')],
                 port=8004,
                 reload=True)

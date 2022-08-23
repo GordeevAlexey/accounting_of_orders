@@ -3,6 +3,7 @@ from functools import wraps
 from pypika import Query, Table, Field
 from uuid import uuid4
 from datetime import datetime
+import json
 
 #sqlite3.IntegrityError: UNIQUE constraint failed: USERS.email
 
@@ -93,13 +94,14 @@ class DBConnection:
 
     @classmethod
     @cursor_add
-    def update_order(cls, cursor, uuid, status):
+    def update_order(cls, cursor, data: json):
+        data = json.loads(data)
         table = Table('ORDERS')
-        q = Query.update(table).set(table.status_code, status).where(table.id == uuid)
+        q = Query.update(table).where(table.id == data['id'])\
+            .set('update_date', datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
+        for key in data:
+            q = q.set(key, data[key])
         cursor.execute(str(q))
         cursor.close()
-
-
-class FetchDataFormatter:
-    pass
+        print(f'Успешно обновленны данные id:{data["id"]}')
 

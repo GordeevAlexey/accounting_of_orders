@@ -2,8 +2,9 @@ import pandas as pd
 import xlsxwriter
 import os
 from io import BytesIO
-
 from database.db import DBConnection
+
+import json
 
 
 class Report:
