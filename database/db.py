@@ -48,7 +48,7 @@ class DBConnection:
     @classmethod
     @cursor_add
     def _create_tables(cls, cursor):
-        with open('database\schema.sql', 'r', encoding='utf-8') as query:
+        with open('database\sql\schema.sql', 'r', encoding='utf-8') as query:
             tables_creation_request = query.read()
         cursor.executescript(tables_creation_request)
         cursor.close()

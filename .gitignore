@@ -6,6 +6,6 @@ env
 *.doc
 *.docx
 *.log
-.env
+*.env
 income/
 *.db
