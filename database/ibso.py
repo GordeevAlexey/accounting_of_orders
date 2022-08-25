@@ -2,6 +2,8 @@ import cx_Oracle
 from abc import ABC, abstractmethod
 import pandas as pd
 from dotenv import load_dotenv
+import requests
+from bs4 import BeautifulSoup as bs
 import os
 import json
 
@@ -54,3 +56,25 @@ class Employees(IBSO):
                 .agg({'PRIVATE_PERSON': lambda x: x.tolist()}).reset_index()
         employees = dict(zip(groupped_divisions.DIVISION, groupped_divisions.PRIVATE_PERSON))
         return json.dumps(employees)
+
+    @staticmethod
+    def get_phone_book() -> json:
+        """
+        Тянет данные с портала
+        """
+        phonebook = {}
+        r = requests.get('http://portal/phonebook')
+        soup = bs(r.text, "html.parser")
+        main_table = soup.find_all('tr', class_='usTblContent')
+        for table in main_table:
+            table = tuple(map(lambda x: x.text.replace('\n', ''), table))
+            phonebook.update(
+                {
+                table[3]: {
+                    'position': table[5],
+                    'mail': table[9],
+                    'phone': table[11] or '-',
+                }
+            }
+        )
+        return json.dumps(phonebook)
