@@ -5,10 +5,6 @@ from uuid import uuid4
 from datetime import datetime
 import json
 import pandas as pd
-from utils import OrderRow, Order
-from dataclasses import asdict
-from pprint import pprint
-# from utils import *
 
 #sqlite3.IntegrityError: UNIQUE constraint failed: USERS.email
 
@@ -100,12 +96,24 @@ class OrdersTable(DBConnection):
     
     @classmethod
     @DBConnection().cursor_add
-    def get_order_report_data(cls, cursor):
+    def get_orders_report_data(cls, cursor):
         #Выгрузка по форме отчета
-        headers = OrdersTable()._get_orders_header()
+        headers = (
+            'issue_type',
+            'issue_idx',
+            'approving_date',
+            'title',
+            'initiator',
+            'approving_employee',
+            'employee',
+            'deadline',
+            'status_code',
+            'close_date',
+            'comment',
+        )
         table = Table('ORDERS')
         q = Query.from_(table).select(
-            table.create_date,
+            table.issue_type,
             table.issue_idx,
             table.approving_date,
             table.title,
