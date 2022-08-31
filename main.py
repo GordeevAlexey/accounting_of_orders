@@ -1,4 +1,3 @@
-from utils import get_orders
 from database.db import DBConnection
 from datetime import datetime
 
@@ -9,8 +8,11 @@ from starlette.requests import Request
 from starlette.templating import Jinja2Templates
 from send_email import Email
 from email.mime.text import MIMEText
-from reports import Report
+from reports import OrderReport
 from fastapi.responses import StreamingResponse
+import schedule
+from multiprocessing import Process
+import time
 
 
 app = FastAPI()
@@ -23,35 +25,62 @@ app.add_middleware(
 )
 templates = Jinja2Templates(directory="static", autoescape=False, auto_reload=True)
 
+global RESULT
+
+
+def good_luck():
+    schedule.every(5).seconds.do(_good_luck)
+    while True: 
+        schedule.run_pending() 
+        time.sleep(1) 
+
+
+def _good_luck():
+    global RESULT
+    RESULT = "ЗАТЯНИ МНЕ ПОТУЖЕ ПЕТЛЮ МОЯ ВОЛЬНИЦА!!!!!!!!!111"
+    print('Shedle compleate')
+
+
+@app.get("/check_result")
+async def check_result():
+    global RESULT
+    print(RESULT)
+
+
 
 @app.post("/add_task")
 async def add_task(request: Request,
-                   title: str = Form(),
-                   daedline: str = Form(),
+                   issue_type: str = Form(),
                    initiator: str = Form(),
+                   title: str = Form(),
+                   issue_date: str = Form(),
                    employee: str = Form(),
-                   department: str = Form(),
-                   task_txt: str = Form()
+                   status_code: str = Form(),
+                   deadline: str = Form(),
+                   close_date: str = Form(),
+                   comment: str = Form(),
+                   reference: str = Form(),
                    ):
 
-    DBConnection.add_order(title,
-                           'Гордеев Алексей Николаевич',
-                           initiator,
-                           employee,
-                           department,
-                           task_txt,
-                           datetime.now().strftime('%d.%m.%Y'),
-                           daedline,
-                           None,
-                           'В работе',
-                           None)
+    DBConnection.add_order(
+        issue_type,
+        initiator,
+        title,
+        issue_date,
+        employee,
+        status_code,
+        deadline,
+        close_date,
+        comment,
+        reference,
+    )
 
     mail_alert_txt = MIMEText(f"{employee}, Вам назначено поручение от {initiator}. <br> "\
-                              f"<b>Срок исполнения до:</b> {daedline} <br> "\
-                              f"<b>Поручение: </b> {task_txt}", "html")
+                              f"<b>Срок исполнения до:</b> {deadline} <br> "\
+                              f"<b>Поручение: </b> {title}", "html")
 
     send_Email = Email()
-    send_Email.send("abramovich@akcept.ru", mail_alert_txt)
+    send_Email.send("sidorovich@akcept.ru", mail_alert_txt)
 
     return templates.TemplateResponse('index.html', {'request': request})
 
@@ -64,25 +93,13 @@ async def update(request: Request,
     print(status)
     print(txt_close)
 
-    # DBConnection.add_order(title,
-    #                        'Гордеев Алексей Николаевич',
-    #                        initiator,
-    #                        employee,
-    #                        department,
-    #                        task_txt,
-    #                        datetime.now().strftime('%d.%m.%Y'),
-    #                        daedline,
-    #                        None,
-    #                        'В работе',
-    #                        None)
-
     return templates.TemplateResponse('index.html', {'request': request})
 
 
 @app.get("/get_data", response_description='xlsx')
 async def get_task():
     #Скачивает отчет
-    r = Report()
+    r = OrderReport()
     r.get_report()
     headers = {
         'Content-Disposition': 'attachment; filename="report.xlsx"'
@@ -101,8 +118,11 @@ async def start(request: Request):
 
 
 if __name__ == "__main__":
+    jobs = []
+    p1 = Process(target=good_luck)
+    jobs.append(p1)
+    p1.start()
     uvicorn.run("main:app",
                 host="192.168.200.92",
-                # headers=[('server', 'top4ik')],
                 port=8004,
                 reload=True)

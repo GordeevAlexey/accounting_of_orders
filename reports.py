@@ -67,19 +67,3 @@ class OrderReport:
         self._add_data_from_db()
         self.workbook.close()
         self.output.seek(0)
-
-r = OrderReport()._add_data_from_db()
-
-# data = json.dumps({
-#     'id': 'a79929c3-7aa6-475b-9267-87f3a39fc9e0',
-#     'issue_type': 'Приказ',
-#     'initiator': 'Сидорович Н.С.',
-#     'title': 'О запуске пилотного проекта...',
-#     'issue_date': '22.08.2022',
-#     'employee': 'Захаров С.А.',
-#     'status_code': 'Заведено',
-#     'close_date': None,
-#     'comment': 'Срочно',
-# })
-# DBConnection.update_order(data)
-# print(DBConnection.get_orders())

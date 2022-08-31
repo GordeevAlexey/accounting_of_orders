@@ -2,12 +2,12 @@ import sqlite3
 from functools import wraps
 from pypika import Query, Table
 from uuid import uuid4
-from datetime import datetime
+from datetime import date, datetime
 import json
 import pandas as pd
+from datetime import datetime, timedelta
 
 #sqlite3.IntegrityError: UNIQUE constraint failed: USERS.email
-
 
 
 class DBConnector:
@@ -79,14 +79,43 @@ class OrdersTable(DBConnection):
             return headers
         except:
             return None
+        finally:
+            cursor.close()
 
     @classmethod
     @DBConnection().cursor_add
-    def get_orders_table(cls, cursor):
-        #Полная выгрузка
-        orders = cursor.fetchall()
-        headers = OrdersTable()._get_orders_header()
+    def get_delay_orders(cls, cursor, days: int = 0):
+        """
+        """
+        delay_date = datetime.today() + timedelta(days=days)
         table = Table('ORDERS')
+        cols = (
+            'id',
+            'title',
+            'initiator',
+            'employee',
+            'deadline'
+        )
+        q = Query.from_(table).select(*cols)\
+            .where(
+                (table.deleted == False) & (table.status != 'Исполнено')
+                & (table.deadline == delay_date.strftime('%d.%m.%Y'))
+            )
+        cursor.execute(str(q))
+        delay_orders = cursor.fetchall()
+        cursor.close()
+        if delay_orders:
+            delay_orders = json.dumps([{k: v for k,v in zip(cols, row)} for row in delay_orders])
+        else:
+            delay_orders = None
+        return delay_orders
+
+    @classmethod
+    @DBConnection().cursor_add
+    def get_orders_table(cls, cursor, table_name: str):
+        #Полная выгрузка
+        headers = OrdersTable()._get_orders_header()
+        table = Table(table_name)
         q = Query.from_(table).select(table.star)
         cursor.execute(str(q))
         orders = cursor.fetchall()
@@ -94,6 +123,7 @@ class OrdersTable(DBConnection):
         cursor.close()
         return json.dumps(result)
     
+    #TODO: Доработать с новыми изменениями
     @classmethod
     @DBConnection().cursor_add
     def get_orders_report_data(cls, cursor):
@@ -133,8 +163,8 @@ class OrdersTable(DBConnection):
 
     @classmethod
     @DBConnection().cursor_add
-    def add_order(cls, cursor, row: json):
-        table = Table('ORDERS')
+    def add_order(cls, cursor, row: json, table_name: str):
+        table = Table(table_name)
         row = json.loads(row)
         _columns = row.keys()
         q = Query.into(table).columns(
@@ -196,6 +226,23 @@ class ReportDatabaseWriter(OrdersTable):
         rows = self._handle_excel_report()
         for row in rows:
             super().add_order(row)
+        
+
+# OrdersTable().get_delay_orders()
+data = {
+    'issue_type': 'Приказ',
+    'issue_idx': '586',
+    'approving_date': '19.07.2022',
+    'title': "Об актуализации плана  реализации проекта  по использованию биометрической идентификации при обслуживании физических лиц",
+    'initiator': 'Сергунина Е.В.',
+    'approving_employee':'Терехина Е.С.',
+    'deadline': '28.08.2022',
+    'status_code': 'В работе',
+    'close_date': '',
+    'comment': '',
+    'reference': 'C:\Users\sidorovich_ns\Desktop\Projects\accounting_of_orders\income\Приказ_продажа монет кассовым работником.doc',
+}
+OrdersTable.add_order(data)
 
 
 
