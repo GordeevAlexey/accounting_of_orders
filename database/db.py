@@ -139,31 +139,20 @@ class OrdersTable(DBConnection):
     def get_orders_report_data(cls, cursor) -> json:
         #Выгрузка по форме отчета
         headers = (
+            'id',
             'issue_type',
             'issue_idx',
             'approving_date',
             'title',
             'initiator',
             'approving_employee',
-            'employee',
             'deadline',
             'status_code',
             'close_date',
             'comment',
+            'performance_note',
         )
-        q = Query.from_(cls.table).select(
-            cls.table.issue_type,
-            cls.table.issue_idx,
-            cls.table.approving_date,
-            cls.table.title,
-            cls.table.initiator,
-            cls.table.approving_employee,
-            cls.table.employee,
-            cls.table.deadline,
-            cls.table.status_code,
-            cls.table.close_date,
-            cls.table.comment
-        )
+        q = Query.from_(cls.table).select(*headers)
         cursor.execute(str(q))
         orders = cursor.fetchall()
         result = [{k: v for k,v in zip(headers, row)} for row in orders]
