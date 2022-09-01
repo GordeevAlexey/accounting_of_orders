@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>Добавление поручения</title>
     <link href="style.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="https://snipp.ru/cdn/chosen/1.8.7/chosen.min.css">
+    <script src="https://snipp.ru/cdn/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://snipp.ru/cdn/chosen/1.8.7/chosen.jquery.min.js"></script>
     <style>
             body {
             background-color: white
@@ -32,7 +35,7 @@
                 box-shadow:0 0 15px 2px rgba(60,74,123,.7);
                 border-bottom:1px ;
                 box-sizing: border-box;
-                margin:8px
+                margin: 0 auto;
                 }
 
             textarea{
@@ -59,25 +62,32 @@
             outline:0;
                 }
 
+            .select_wrp {
+            width: 300px;
+            margin: 0 auto;
+                }
+
 </style>
 
 </head>
 <body>
+            <div class="select_wrp">
+                <select class="js-chosen" name="initiator"  multiple="multiple">
+                        <option value="Инициатор" selected="selected">Инициатор</option>
+                        <option value="Терехина Елена Сергеевна">Терехина Елена Сергеевна</option>
+                        <option value="Косенкова Ирина Александровна">Косенкова Ирина Александровна</option>
+                        <option value="Красильникова Татьяна Владимировна">Красильникова Татьяна Владимировна</option>
+                        <option value="Шачнева Татьяна Алексеевна">Шачнева Татьяна Алексеевна</option>
+                        <option value="Локоть Марина Борисовна">Локоть Марина Борисовна</option>
+                </select>
+            </div>
+
+
 
     <div class="container">
         <form action="/add_task" method="post">
             <input name="title" type="text" placeholder="Тема">
             <input name="daedline" type="date" placeholder="Дата исполнения">
-
-            <select name="initiator" id="initiator">
-                    <option value="Инициатор" selected="selected">Инициатор</option>
-                    <option value="Терехина Елена Сергеевна">Терехина Елена Сергеевна</option>
-                    <option value="Косенкова Ирина Александровна">Косенкова Ирина Александровна</option>
-                    <option value="Красильникова Татьяна Владимировна">Красильникова Татьяна Владимировна</option>
-                    <option value="Шачнева Татьяна Алексеевна">Шачнева Татьяна Алексеевна</option>
-                    <option value="Локоть Марина Борисовна">Локоть Марина Борисовна</option>
-            </select>
-
             <select name="employee" id="employee">
                     <option value="Исполнитель" selected="selected">Исполнитель</option>
                     <option value="Захаров Сергей Александрович">Захаров Сергей Александрович</option>
@@ -95,11 +105,48 @@
                     <option value="ОКККиИП">ОКККиИП</option>
             </select>
 
+            <select name="initiator" id="initiator" multiple="multiple">
+                    <option value="Терехина Елена Сергеевна">Терехина Елена Сергеевна</option>
+                    <option value="Косенкова Ирина Александровна">Косенкова Ирина Александровна</option>
+                    <option value="Красильникова Татьяна Владимировна">Красильникова Татьяна Владимировна</option>
+                    <option value="Шачнева Татьяна Алексеевна">Шачнева Татьяна Алексеевна</option>
+                    <option value="Локоть Марина Борисовна">Локоть Марина Борисовна</option>
+            </select>
+
+            <input list="browsers" id="myBrowser" name="myBrowser" multiple />
+                <datalist id="browsers">
+                  <option value="Chrome">
+                  <option value="Firefox">
+                  <option value="Internet Explorer">
+                  <option value="Opera">
+                  <option value="Safari">
+                  <option value="Microsoft Edge">
+                </datalist>
+
+            <input type="email" class="multidatalist" multiple="multiple" name="search" list="tags" autocomplete="off" />
+                <datalist id="tags">
+                    <option value="black">
+                    <option value="gold">
+                    <option value="grey">
+                </datalist>
+
             <br><br>
             <textarea name="task_txt" type="text" placeholder="Текст поручения"></textarea>
             <br>
             <input type="submit" name="submit" value="Сохранить">
             </form>
     </div>
+
+<script>
+    $(document).ready(function(){
+	$('.js-chosen').chosen({
+		width: '100%',
+		no_results_text: 'Совпадений не найдено',
+		placeholder_text_single: 'Выберите город'
+	});
+});
+</script>
+
+
 </body>
 </html>

@@ -71,10 +71,10 @@ class OrdersTable(DBConnection):
     """
     @classmethod
     @DBConnection().cursor_add
-    def _get_orders_header(cls, cursor):
+    def _get_orders_header(cls, cursor, table_name):
         #Возвращает все имена столбцов таблицы ORDERS
         try:
-            cursor.execute("PRAGMA table_info(ORDERS)") 
+            cursor.execute(f"PRAGMA table_info({table_name})")
             headers = [row[1] for row in cursor.fetchall()]
             return headers
         except:
@@ -82,15 +82,15 @@ class OrdersTable(DBConnection):
 
     @classmethod
     @DBConnection().cursor_add
-    def get_orders_table(cls, cursor):
+    def get_orders_table(cls, cursor, table_name):
         #Полная выгрузка
         orders = cursor.fetchall()
-        headers = OrdersTable()._get_orders_header()
-        table = Table('ORDERS')
+        headers = OrdersTable()._get_orders_header(table_name)
+        table = Table(table_name)
         q = Query.from_(table).select(table.star)
         cursor.execute(str(q))
         orders = cursor.fetchall()
-        result = [{k: v for k,v in zip(headers, row)} for row in orders]
+        result = [{k: v for k, v in zip(headers, row)} for row in orders]
         cursor.close()
         return json.dumps(result)
     
@@ -139,12 +139,12 @@ class OrdersTable(DBConnection):
         _columns = row.keys()
         q = Query.into(table).columns(
             'id', 'deleted',
-            'create_date', 'update_date',
+            'create_date', 'update_date', 'status_code',
             *_columns
         )\
             .insert(
                 uuid4(), False, datetime.now().strftime('%d.%m.%Y %H:%M:%S'),
-                None, *row.values()
+                None, 'В работе', *row.values()
         )
         cursor.execute(str(q))
         cursor.close()
