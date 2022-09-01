@@ -51,11 +51,12 @@ class DBConnection:
 
     @classmethod
     @cursor_add
-    def _create_tables(cls, cursor, schema_path: str):
-        with open(schema_path, 'r', encoding='utf-8') as query:
-            tables_creation_request = query.read()
-        cursor.executescript(tables_creation_request)
-        cursor.close()
+    def _create_tables(cls, cursor, schema_path: str = None):
+        if schema_path:
+            with open(schema_path, 'r', encoding='utf-8') as query:
+                tables_creation_request = query.read()
+            cursor.executescript(tables_creation_request)
+            cursor.close()
 
     @classmethod
     @cursor_add
@@ -84,21 +85,29 @@ class OrdersTable(DBConnection):
 
     @classmethod
     @DBConnection().cursor_add
-    def get_delay_orders(cls, cursor, days: int = 0):
+    def get_delay_orders(cls, cursor, days: int = 0) -> json:
         """
+        Возвращает выборку по просроченным поручениям.
         """
         delay_date = datetime.today() + timedelta(days=days)
         table = Table('ORDERS')
         cols = (
             'id',
+            'create_date',
+            'update_date',
+            'issue_type',
+            'issue_idx',
             'title',
             'initiator',
             'employee',
-            'deadline'
+            'deadline',
+            'performance_note',
+            'comment',
+            'reference',
         )
         q = Query.from_(table).select(*cols)\
             .where(
-                (table.deleted == False) & (table.status != 'Исполнено')
+                (table.deleted == False) & (table.status_code != 'Исполнено')
                 & (table.deadline == delay_date.strftime('%d.%m.%Y'))
             )
         cursor.execute(str(q))
@@ -112,10 +121,10 @@ class OrdersTable(DBConnection):
 
     @classmethod
     @DBConnection().cursor_add
-    def get_orders_table(cls, cursor, table_name: str):
+    def get_orders_table(cls, cursor) -> json:
         #Полная выгрузка
         headers = OrdersTable()._get_orders_header()
-        table = Table(table_name)
+        table = Table('ORDERS')
         q = Query.from_(table).select(table.star)
         cursor.execute(str(q))
         orders = cursor.fetchall()
@@ -126,7 +135,7 @@ class OrdersTable(DBConnection):
     #TODO: Доработать с новыми изменениями
     @classmethod
     @DBConnection().cursor_add
-    def get_orders_report_data(cls, cursor):
+    def get_orders_report_data(cls, cursor) -> json:
         #Выгрузка по форме отчета
         headers = (
             'issue_type',
@@ -163,8 +172,8 @@ class OrdersTable(DBConnection):
 
     @classmethod
     @DBConnection().cursor_add
-    def add_order(cls, cursor, row: json, table_name: str):
-        table = Table(table_name)
+    def add_order(cls, cursor, row: json) -> None:
+        table = Table('ORDERS')
         row = json.loads(row)
         _columns = row.keys()
         q = Query.into(table).columns(
@@ -182,10 +191,138 @@ class OrdersTable(DBConnection):
 
     @classmethod
     @DBConnection().cursor_add
-    def update_order(cls, cursor, data: json):
+    def update_order(cls, cursor, data: json) -> None:
         #Обязательно должен быть передан id записи
         data = json.loads(data)
         table = Table('ORDERS')
+        q = Query.update(table).where(table.id == data['id'])\
+            .set('update_date', datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
+        for key in data:
+            q = q.set(key, data[key])
+        cursor.execute(str(q))
+        cursor.close()
+        print(f'Успешно обновленны данные id:{data["id"]}')
+
+
+class SubOrdersTable(DBConnection):
+    """
+    Работа с подзадачами в поручении/приказе
+    """
+    @classmethod
+    @DBConnection().cursor_add
+    def _get_suborders_header(cls, cursor):
+        #Возвращает все имена столбцов таблицы SUBORDERS
+        try:
+            cursor.execute("PRAGMA table_info(SUBORDERS)") 
+            headers = [row[1] for row in cursor.fetchall()]
+            return headers
+        except:
+            return None
+        finally:
+            cursor.close()
+
+    @classmethod
+    @DBConnection().cursor_add
+    def get_delay_suborders(cls, cursor, days: int = 0) -> json:
+        """
+        Возвращает выборку по просроченным поручениям.
+        """
+        delay_date = datetime.today() + timedelta(days=days)
+        table = Table('SUBORDERS')
+        cols = (
+            'id',
+            'id_orders',
+            'title',
+            'employee',
+            'content',
+            'deadline'
+        )
+        q = Query.from_(table).select(*cols)\
+            .where(
+                (table.deleted == False) & (table.status_code != 'Исполнено')
+                & (table.deadline == delay_date.strftime('%d.%m.%Y'))
+            )
+        cursor.execute(str(q))
+        sub_orders = cursor.fetchall()
+        cursor.close()
+        if sub_orders:
+            sub_orders = json.dumps([{k: v for k,v in zip(cols, row)} for row in sub_orders])
+        else:
+            sub_orders = None
+        return sub_orders
+
+    @classmethod
+    @DBConnection().cursor_add
+    def get_suborders_table(cls, cursor) -> json:
+        #Полная выгрузка
+        headers = SubOrdersTable()._get_suborders_header()
+        table = Table('SUBORDERS')
+        q = Query.from_(table).select(table.star)
+        cursor.execute(str(q))
+        suborders = cursor.fetchall()
+        result = [{k: v for k,v in zip(headers, row)} for row in suborders]
+        cursor.close()
+        return json.dumps(result)
+    
+    #TODO: Доработать с новыми изменениями
+    @classmethod
+    @DBConnection().cursor_add
+    def get_suborders_report_data(cls, cursor, id_orders: bytes) -> json:
+        #Выгрузка по форме отчета
+        id_orders = id_orders.decode('utf-8')
+        headers = (
+            'title',
+            'employee',
+            'deadline',
+            'content',
+            'performance_note',
+            'status_code',
+            'close_date',
+            'comment',
+        )
+        table = Table('SUBORDERS')
+        q = Query.from_(table).select(
+            table.title,
+            table.employee,
+            table.deadline,
+            table.content,
+            table.performance_note,
+            table.status_code,
+            table.close_date,
+            table.comment
+        ).where(table.id_orders == id_orders)
+        cursor.execute(str(q))
+        suborders = cursor.fetchall()
+        result = [{k: v for k,v in zip(headers, row)} for row in suborders]
+        cursor.close()
+        return json.dumps(result)
+
+    @classmethod
+    @DBConnection().cursor_add
+    def add_suborder(cls, cursor, row: json) -> None:
+        table = Table('SUBORDERS')
+        row = json.loads(row)
+        _columns = row.keys()
+        q = Query.into(table).columns(
+            'id', 'deleted',
+            'create_date', 'update_date',
+            *_columns
+        )\
+            .insert(
+                uuid4(), False,
+                datetime.now().strftime('%d.%m.%Y %H:%M:%S'),
+                None, *row.values()
+            )
+        cursor.execute(str(q))
+        cursor.close()
+        print(f"Поручение добавлено")
+
+    @classmethod
+    @DBConnection().cursor_add
+    def update_suborder(cls, cursor, data: json) -> None:
+        #Обязательно должен быть передан id записи
+        data = json.loads(data)
+        table = Table('SUBORDERS')
         q = Query.update(table).where(table.id == data['id'])\
             .set('update_date', datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
         for key in data:
@@ -228,21 +365,6 @@ class ReportDatabaseWriter(OrdersTable):
             super().add_order(row)
         
 
-# OrdersTable().get_delay_orders()
-data = {
-    'issue_type': 'Приказ',
-    'issue_idx': '586',
-    'approving_date': '19.07.2022',
-    'title': "Об актуализации плана  реализации проекта  по использованию биометрической идентификации при обслуживании физических лиц",
-    'initiator': 'Сергунина Е.В.',
-    'approving_employee':'Терехина Е.С.',
-    'deadline': '28.08.2022',
-    'status_code': 'В работе',
-    'close_date': '',
-    'comment': '',
-    'reference': 'C:\Users\sidorovich_ns\Desktop\Projects\accounting_of_orders\income\Приказ_продажа монет кассовым работником.doc',
-}
-OrdersTable.add_order(data)
 
 
 
