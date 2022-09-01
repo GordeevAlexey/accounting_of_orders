@@ -70,6 +70,9 @@ class OrdersTable(DBConnection):
     """
     Работа с таблицей Поручений
     """
+
+    table = Table("ORDERS")
+
     @classmethod
     @DBConnection().cursor_add
     def _get_orders_header(cls, cursor):
@@ -90,7 +93,6 @@ class OrdersTable(DBConnection):
         Возвращает выборку по просроченным поручениям.
         """
         delay_date = datetime.today() + timedelta(days=days)
-        table = Table('ORDERS')
         cols = (
             'id',
             'create_date',
@@ -105,10 +107,10 @@ class OrdersTable(DBConnection):
             'comment',
             'reference',
         )
-        q = Query.from_(table).select(*cols)\
+        q = Query.from_(cls.table).select(*cols)\
             .where(
-                (table.deleted == False) & (table.status_code != 'Исполнено')
-                & (table.deadline == delay_date.strftime('%d.%m.%Y'))
+                (cls.table.deleted == False) & (cls.table.status_code != 'Исполнено')
+                & (cls.table.deadline == delay_date.strftime('%d.%m.%Y'))
             )
         cursor.execute(str(q))
         delay_orders = cursor.fetchall()
@@ -124,8 +126,7 @@ class OrdersTable(DBConnection):
     def get_orders_table(cls, cursor) -> json:
         #Полная выгрузка
         headers = OrdersTable()._get_orders_header()
-        table = Table('ORDERS')
-        q = Query.from_(table).select(table.star)
+        q = Query.from_(cls.table).select(cls.table.star)
         cursor.execute(str(q))
         orders = cursor.fetchall()
         result = [{k: v for k,v in zip(headers, row)} for row in orders]
@@ -150,19 +151,18 @@ class OrdersTable(DBConnection):
             'close_date',
             'comment',
         )
-        table = Table('ORDERS')
-        q = Query.from_(table).select(
-            table.issue_type,
-            table.issue_idx,
-            table.approving_date,
-            table.title,
-            table.initiator,
-            table.approving_employee,
-            table.employee,
-            table.deadline,
-            table.status_code,
-            table.close_date,
-            table.comment
+        q = Query.from_(cls.table).select(
+            cls.table.issue_type,
+            cls.table.issue_idx,
+            cls.table.approving_date,
+            cls.table.title,
+            cls.table.initiator,
+            cls.table.approving_employee,
+            cls.table.employee,
+            cls.table.deadline,
+            cls.table.status_code,
+            cls.table.close_date,
+            cls.table.comment
         )
         cursor.execute(str(q))
         orders = cursor.fetchall()
@@ -194,8 +194,7 @@ class OrdersTable(DBConnection):
     def update_order(cls, cursor, data: json) -> None:
         #Обязательно должен быть передан id записи
         data = json.loads(data)
-        table = Table('ORDERS')
-        q = Query.update(table).where(table.id == data['id'])\
+        q = Query.update(cls.table).where(cls.table.id == data['id'])\
             .set('update_date', datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
         for key in data:
             q = q.set(key, data[key])
@@ -208,6 +207,9 @@ class SubOrdersTable(DBConnection):
     """
     Работа с подзадачами в поручении/приказе
     """
+
+    table = Table('SUBORDERS')
+
     @classmethod
     @DBConnection().cursor_add
     def _get_suborders_header(cls, cursor):
@@ -223,12 +225,12 @@ class SubOrdersTable(DBConnection):
 
     @classmethod
     @DBConnection().cursor_add
-    def get_delay_suborders(cls, cursor, days: int = 0) -> json:
+    def get_delay_suborders(cls, cursor, id_orders: bytes, days: int = 0) -> json:
         """
         Возвращает выборку по просроченным поручениям.
         """
+        id_orders = id_orders.decode('utf-8')
         delay_date = datetime.today() + timedelta(days=days)
-        table = Table('SUBORDERS')
         cols = (
             'id',
             'id_orders',
@@ -237,10 +239,11 @@ class SubOrdersTable(DBConnection):
             'content',
             'deadline'
         )
-        q = Query.from_(table).select(*cols)\
+        q = Query.from_(cls.table).select(*cols)\
             .where(
-                (table.deleted == False) & (table.status_code != 'Исполнено')
-                & (table.deadline == delay_date.strftime('%d.%m.%Y'))
+                (cls.table.deleted == False) & (cls.table.status_code != 'Исполнено')
+                & (cls.table.deadline == delay_date.strftime('%d.%m.%Y'))
+                &(cls.table.id_orders == id_orders)
             )
         cursor.execute(str(q))
         sub_orders = cursor.fetchall()
@@ -253,11 +256,11 @@ class SubOrdersTable(DBConnection):
 
     @classmethod
     @DBConnection().cursor_add
-    def get_suborders_table(cls, cursor) -> json:
-        #Полная выгрузка
+    def get_suborders_table(cls, cursor, id_orders: bytes) -> json:
+        #Выгрзука подзадач по отдельному приказу или поручению
+        id_orders = id_orders.decode('utf-8')
         headers = SubOrdersTable()._get_suborders_header()
-        table = Table('SUBORDERS')
-        q = Query.from_(table).select(table.star)
+        q = Query.from_(cls.table).select(cls.table.star)
         cursor.execute(str(q))
         suborders = cursor.fetchall()
         result = [{k: v for k,v in zip(headers, row)} for row in suborders]
@@ -271,7 +274,6 @@ class SubOrdersTable(DBConnection):
         #Выгрузка по форме отчета
         id_orders = id_orders.decode('utf-8')
         headers = (
-            'title',
             'employee',
             'deadline',
             'content',
@@ -280,17 +282,7 @@ class SubOrdersTable(DBConnection):
             'close_date',
             'comment',
         )
-        table = Table('SUBORDERS')
-        q = Query.from_(table).select(
-            table.title,
-            table.employee,
-            table.deadline,
-            table.content,
-            table.performance_note,
-            table.status_code,
-            table.close_date,
-            table.comment
-        ).where(table.id_orders == id_orders)
+        q = Query.from_(cls.table).select(*headers).where(cls.table.id_orders == id_orders)
         cursor.execute(str(q))
         suborders = cursor.fetchall()
         result = [{k: v for k,v in zip(headers, row)} for row in suborders]
@@ -300,10 +292,9 @@ class SubOrdersTable(DBConnection):
     @classmethod
     @DBConnection().cursor_add
     def add_suborder(cls, cursor, row: json) -> None:
-        table = Table('SUBORDERS')
         row = json.loads(row)
         _columns = row.keys()
-        q = Query.into(table).columns(
+        q = Query.into(cls.table).columns(
             'id', 'deleted',
             'create_date', 'update_date',
             *_columns
@@ -322,8 +313,10 @@ class SubOrdersTable(DBConnection):
     def update_suborder(cls, cursor, data: json) -> None:
         #Обязательно должен быть передан id записи
         data = json.loads(data)
-        table = Table('SUBORDERS')
-        q = Query.update(table).where(table.id == data['id'])\
+        q = Query.update(cls.table).where(
+            (cls.table.id == data['id'])
+            & (cls.table.id_orders == data['id_orders'])
+            )\
             .set('update_date', datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
         for key in data:
             q = q.set(key, data[key])

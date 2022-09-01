@@ -40,6 +40,15 @@ add_suborder_row = json.dumps({
 
 })
 
+update_suborder_row = json.dumps({
+    'id_orders': '7799e5a1-fccc-4134-bd06-7a0c1d9d17a8',
+    'id': '2220ab33-2fda-4843-89c1-92443b767dac',
+    'content': 'Обновленное содержание',
+    'comment': 'Обновлено 01.09.2022',
+    'deadline': '01.09.2022',
+
+})
+
 
 class TestOrdersTable:
     def test_add_order(self):
@@ -86,30 +95,30 @@ class TestSubOrdersTable:
         except:
             raise
 
-    def test_get_suborders_table(self):
+    def test_get_suborders_table(self, id_order: bytes):
         try:
-            SubOrdersTable().get_orders_table()
+            print(json.loads(SubOrdersTable().get_suborders_table(id_order)))
             print('test_get_orders_table passed!')
         except:
             raise
 
-    def test_get_suborders_report_data(self):
+    def test_get_suborders_report_data(self, id_orders: bytes):
         try:
-            SubOrdersTable().get_orders_report_data()
+            print(json.loads(SubOrdersTable().get_suborders_report_data(id_orders)))
             print('test_get_orders_report_data passed!')
         except:
             raise
 
     def test_update_suborder(self, data: json):
         try:
-            SubOrdersTable().update_order(data)
+            SubOrdersTable().update_suborder(data)
             print('test_update_order passed!')
         except:
             raise
 
-    def test_get_delay_suborders(self, days: int = 0):
+    def test_get_delay_suborders(self, id_orders: bytes, days: int = 0):
         try:
-            print(SubOrdersTable().get_delay_orders())
+            print(SubOrdersTable().get_delay_suborders(id_orders, days))
             print('test_get_delay_orders passed!')
         except:
             raise
@@ -117,5 +126,9 @@ class TestSubOrdersTable:
 
 if __name__ == "__main__":
     DBConnection()._create_tables('database\sql\schema.sql')
-    # TestOrdersTable.test_add_order(add_order_row)
+    TestOrdersTable.test_add_order(add_order_row)
     TestSubOrdersTable().test_add_suborder(add_suborder_row)
+    TestSubOrdersTable().test_get_suborders_table(id_order)
+    TestSubOrdersTable().test_get_suborders_report_data(id_order)
+    TestSubOrdersTable().test_update_suborder(update_suborder_row)
+    TestSubOrdersTable().test_get_delay_suborders(id_order)
