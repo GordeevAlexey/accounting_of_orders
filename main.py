@@ -11,7 +11,7 @@ from starlette.responses import RedirectResponse
 from starlette.templating import Jinja2Templates
 from send_email import Email
 from email.mime.text import MIMEText
-from reports import Report
+#from reports import Report
 from fastapi.responses import StreamingResponse
 
 
@@ -84,25 +84,25 @@ async def update(request: Request,
     return RedirectResponse("/", status_code=303)
 
 
-@app.get("/get_order_report", response_description='xlsx')
-async def get_task_order_report():
-    #Скачивает отчет
-    r = Report()
-    r.get_report()
-    headers = {
-        'Content-Disposition': 'attachment; filename="report.xlsx"'
-    }
-    return StreamingResponse(r.output, headers=headers)
+# @app.get("/get_order_report", response_description='xlsx')
+# async def get_task_order_report():
+#     #Скачивает отчет
+#     r = Report()
+#     r.get_report()
+#     headers = {
+#         'Content-Disposition': 'attachment; filename="report.xlsx"'
+#     }
+#     return StreamingResponse(r.output, headers=headers)
 
 
 @app.get("/get_order")
 async def get_order():
-    return OrdersTable().get_orders_table('ORDERS')
+    return OrdersTable().get_orders_table()
 
 
 @app.get("/get_suborder")
 async def get_suborder():
-    return OrdersTable().get_orders_table('SUBORDERS')
+    return OrdersTable().get_orders_table()
 
 
 @app.get("/open_form")

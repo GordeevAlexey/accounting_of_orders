@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Система учета поручений</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/css/tabulator.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/css/bootstrap/tabulator_bootstrap4.min.css" rel="stylesheet">
+<style>
+            <style>
+
+                body {
+                background-color: white
+                 }
+
+            img {
+            width: 250px;
+            align: center;
+                }
+
+            p {
+            font-family: sans-serif;
+            font-size: 30px;
+            text-align: center
+            }
+
+            form {
+                text-align:center;
+                 }
+
+            .btn, input, select {
+                width:400px;
+                padding:18px;
+                border-radius: 10px;
+                border:0;
+                box-shadow:0 0 15px 2px rgba(60,74,123,.7);
+                border-bottom:1px ;
+                box-sizing: border-box;
+                margin:8px
+            }
+
+            textarea{
+                font-family: Verdana;
+                font-size: 30;
+                width:1660px;
+                height:400px;
+                padding:18px;
+                border-radius: 10px;
+                border:0;
+                box-shadow:0 0 15px 2px rgba(60,74,123,.7);
+                border-bottom:1px ;
+                box-sizing: border-box;
+                margin:8px
+            }
+
+            button:hover, button:hover {
+            box-shadow:0 0 15px 2px rgba(60,123,68,.7);
+            outline:0;
+            }
+
+            input:hover, button:focus {
+            box-shadow:0 0 15px 2px rgba(60,123,68,.7);
+            outline:0;
+            }
+
+</style>
+<style>
+            .modalwin {
+                height: 200px;
+                width: 300px;
+                border: 3px outset gray;
+                background: wheat;
+                top: 20%; /* отступ сверху */
+                right: 0;
+                left: 0;
+                font-size: 14px;
+                margin: 0 auto;
+                z-index:2; /* поверх всех */
+                display: none;  /* сначала невидим */
+                position: fixed; /* фиксированное позиционирование, окно стабильно при прокрутке */
+                padding: 15px;
+                border: 1px solid #383838;
+            }
+            #shadow {
+                position: fixed;
+                width:100%;
+                height:100%;
+                z-index:1; /* поверх всех  кроме окна*/
+                background:#000;
+                opacity: 0.5; /*прозрачность*/
+                left:0;
+                top:0;
+            }
+        </style>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/js/tabulator.min.js"></script>
+<script type="text/javascript" src="http://192.168.200.168:8004/sandbox/static/tabulator.js"></script>
+
+<body>
+
+
+<input type="button" value="Добавить поручение" onclick="showModalWin()">
+<div id="table"></div>
+
+<div class="container">
+    <form action="/update_task" method="post">
+
+            <input name="issue_type" id="issue_type" type="text" placeholder="Введите текст закрытия">
+
+        <input type="submit" name="submit" value="Сохранить">
+    </form>
+</div>
+
+<script>
+    $(document).ready(function() {
+    var url = 'http://192.168.200.168:8004/get_order';
+
+    $.get(url, function(response) {
+        var table = new Tabulator('#table', {
+        pagination: 'local',
+        paginationSize: 10,
+        data: JSON.parse(response),
+        layout: 'fitColumns',
+        columns: [
+                    { title: 'Вид поручения', field: 'issue_type' },
+                    { title: 'Номер №', field: 'issue_idx' },
+                    { title: 'Дата утверждения', field: 'approving_date' },
+                    { title: 'Тема', field: 'title' },
+                    { title: 'Инициатор', field: 'initiator' },
+                    { title: 'Утверждающий руководитель', field: 'approving_employee' },
+                    { title: 'Срок исполнения', field: 'deadline' },
+                    { title: 'Примечание', field: 'comment' },
+                    { title: 'Ссылка', field: 'reference ' }
+                 ],
+
+        rowClick:function(e, row){
+            if (row.getData().status_code == 'В работе') {
+                $("form").show(300)
+            } else {
+              $("form").hide(300)
+            }
+}
+});
+    });
+});
+</script>
+<script>
+    function showModalWin() {
+        var darkLayer = document.createElement('div'); // слой затемнения
+        darkLayer.id = 'shadow'; // id чтобы подхватить стиль
+        document.body.appendChild(darkLayer); // включаем затемнение
+
+        var modalWin = document.getElementById('popupWin'); // находим наше "окно"
+        modalWin.style.display = 'block'; // "включаем" его
+
+        darkLayer.onclick = function () {  // при клике на слой затемнения все исчезнет
+        darkLayer.parentNode.removeChild(darkLayer); // удаляем затемнение
+        modalWin.style.display = 'none'; // делаем окно невидимым
+            return false;
+            };
+        }
+</script>
+
+
+</body>
+
+
