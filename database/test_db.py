@@ -31,13 +31,13 @@ suborder_id = '2220ab33-2fda-4843-89c1-92443b767dac'.encode('utf-8')
 
 add_suborder_row = json.dumps({
     'id_orders': id_order.decode('utf-8'),
-    'employee': "Федоров А.И.",
-    'deadline': '28.08.2022',
-    'content': 'Регистрация заявки в ЦФТ для  подключения с использованием мобильного приложения банка',
+    'employee': "Иванов И.И.",
+    'deadline': '10.09.2022',
+    'content': '8.	Внести дополнение в Приложение к Учетной политике Банка «Положение о порядке ведения бухгалтерского учета операций с памятными и инвестиционными монетами», утвержденное Приказом № 1365/1 от 14.12.2016.',
     'performance_note': None,
     'status_code': 'В работе',
-    'close_date': '04.09.2022',
-    'comment': 'Подзадача',
+    'close_date': None,
+    'comment': 'Новая подзадача',
 
 })
 
@@ -154,7 +154,7 @@ class TestSubOrdersTable:
 
 
 if __name__ == "__main__":
-    # DBConnection()._create_tables('database\sql\schema.sql')
+    DBConnection()._create_tables('database\sql\schema.sql')
     # TestOrdersTable.test_add_order(add_order_row)
     # TestSubOrdersTable().test_add_suborder(add_suborder_row)
     # TestSubOrdersTable().test_get_suborders_table(id_order)
@@ -167,5 +167,5 @@ if __name__ == "__main__":
     # TestSubOrdersTable().test_delete_suborder_row(suborder_id)
     # TestSubOrdersTable().test_get_suborders_table(id_order)
     # TestSubOrdersTable().test_get_suborders_report_data(id_order)
-    TestSubOrdersTable().test_get_deleted_suborders_rows()
-    TestOrdersTable().test_get_deleted_orders_rows()
+    # TestSubOrdersTable().test_get_deleted_suborders_rows()
+    # TestOrdersTable().test_get_deleted_orders_rows()

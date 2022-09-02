@@ -60,7 +60,7 @@ class DBConnection:
 
     @classmethod
     @cursor_add
-    def execute_query(cls, cursor, query):
+    def execute_query(cls, cursor, query: str):
         cursor.execute(query)
         result = cursor.fetchall()
         cursor.close()
@@ -194,12 +194,27 @@ class OrdersTable(DBConnection):
     @classmethod
     @DBConnection().cursor_add
     def delete_order_row(cls, cursor, id: bytes) -> None:
+        """
+        Данный метод сначала помечает удаленным конкретный приказ по id,
+        далее все его подзадачи.
+        """
         id = id.decode('utf-8')
         q = Query.update(cls.table).where(cls.table.id == id)\
             .set('deleted', True)
         cursor.execute(str(q))
+        q_s = Query.from_(SubOrdersTable.table).select(SubOrdersTable.table.id)\
+            .where(
+                (SubOrdersTable.table.id_orders == id) &
+                (SubOrdersTable.table.deleted != True)
+            )
+        try:
+            suborders_ids = SubOrdersTable().execute_query(str(q_s))
+            for _id in suborders_ids:
+                SubOrdersTable().delete_suborder_row(_id.encode('utf-8'))
+        except:
+            print(f'Подзадачи по id {id} не заведены')
         cursor.close()
-        print(f'Строка с id {id} "удалена" из orders.')
+        print(f'Задача с id {id} и ее подзадачи "удалены" из orders.')
 
     @classmethod
     @DBConnection().cursor_add
@@ -396,9 +411,3 @@ class ReportDatabaseWriter(OrdersTable):
         for row in rows:
             super().add_order(row)
         
-
-
-
-
-
-
