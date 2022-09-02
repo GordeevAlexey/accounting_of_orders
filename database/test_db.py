@@ -27,6 +27,7 @@ updatte_order_row = json.dumps({
 
 #подставить свой id_order
 id_order = '7799e5a1-fccc-4134-bd06-7a0c1d9d17a8'.encode('utf-8')
+suborder_id = '2220ab33-2fda-4843-89c1-92443b767dac'.encode('utf-8')
 
 add_suborder_row = json.dumps({
     'id_orders': id_order.decode('utf-8'),
@@ -60,14 +61,14 @@ class TestOrdersTable:
 
     def test_get_orders_table(self):
         try:
-            OrdersTable().get_orders_table()
+            print(json.loads(OrdersTable().get_orders_table()))
             print('test_get_orders_table passed!')
         except:
             raise
 
     def test_get_orders_report_data(self):
         try:
-            OrdersTable().get_orders_report_data()
+            print(json.loads(OrdersTable().get_orders_report_data()))
             print('test_get_orders_report_data passed!')
         except:
             raise
@@ -83,6 +84,20 @@ class TestOrdersTable:
         try:
             print(OrdersTable().get_delay_orders())
             print('test_get_delay_orders passed!')
+        except:
+            raise
+
+    def test_delete_order_row(self, id: bytes):
+        try:
+            OrdersTable.delete_order_row(id)
+            print('test_delete_order_row passed.')
+        except:
+            raise
+
+    def test_get_deleted_orders_rows(self):
+        try:
+            print(json.loads(OrdersTable._get_deleted_orders_rows()))
+            print('test_get_deleted_orders_rows passed.')
         except:
             raise
 
@@ -123,12 +138,34 @@ class TestSubOrdersTable:
         except:
             raise
 
+    def test_delete_suborder_row(self, id: bytes):
+        try:
+            SubOrdersTable.delete_suborder_row(id)
+            print('test_delete_suborder_row passed.')
+        except:
+            raise
+
+    def test_get_deleted_suborders_rows(self):
+        try:
+            print(json.loads(SubOrdersTable._get_deleted_suborders_rows()))
+            print('test_get_deleted_suborders_rows passed.')
+        except:
+            raise
+
 
 if __name__ == "__main__":
-    DBConnection()._create_tables('database\sql\schema.sql')
-    TestOrdersTable.test_add_order(add_order_row)
-    TestSubOrdersTable().test_add_suborder(add_suborder_row)
-    TestSubOrdersTable().test_get_suborders_table(id_order)
-    TestSubOrdersTable().test_get_suborders_report_data(id_order)
-    TestSubOrdersTable().test_update_suborder(update_suborder_row)
-    TestSubOrdersTable().test_get_delay_suborders(id_order)
+    # DBConnection()._create_tables('database\sql\schema.sql')
+    # TestOrdersTable.test_add_order(add_order_row)
+    # TestSubOrdersTable().test_add_suborder(add_suborder_row)
+    # TestSubOrdersTable().test_get_suborders_table(id_order)
+    # TestSubOrdersTable().test_get_suborders_report_data(id_order)
+    # TestSubOrdersTable().test_update_suborder(update_suborder_row)
+    # TestSubOrdersTable().test_get_delay_suborders(id_order)
+    # TestOrdersTable().test_delete_order_row(id_order)
+    # TestOrdersTable().test_get_orders_report_data()
+    # TestOrdersTable().test_get_orders_table()
+    # TestSubOrdersTable().test_delete_suborder_row(suborder_id)
+    # TestSubOrdersTable().test_get_suborders_table(id_order)
+    # TestSubOrdersTable().test_get_suborders_report_data(id_order)
+    TestSubOrdersTable().test_get_deleted_suborders_rows()
+    TestOrdersTable().test_get_deleted_orders_rows()

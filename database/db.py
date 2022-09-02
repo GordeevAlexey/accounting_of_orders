@@ -126,13 +126,26 @@ class OrdersTable(DBConnection):
     def get_orders_table(cls, cursor) -> json:
         #Полная выгрузка
         headers = OrdersTable()._get_orders_header()
-        q = Query.from_(cls.table).select(cls.table.star)
+        q = Query.from_(cls.table).select(cls.table.star)\
+            .where(cls.table.deleted == False)
         cursor.execute(str(q))
         orders = cursor.fetchall()
         result = [{k: v for k,v in zip(headers, row)} for row in orders]
         cursor.close()
         return json.dumps(result)
     
+    @classmethod
+    @DBConnection().cursor_add
+    def _get_deleted_orders_rows(cls, cursor) -> json:
+        headers = OrdersTable()._get_orders_header()
+        q = Query.from_(cls.table).select(cls.table.star)\
+            .where(cls.table.deleted == True)
+        cursor.execute(str(q))
+        orders = cursor.fetchall()
+        result = [{k: v for k,v in zip(headers, row)} for row in orders]
+        cursor.close()
+        return json.dumps(result)
+
     #TODO: Доработать с новыми изменениями
     @classmethod
     @DBConnection().cursor_add
@@ -152,7 +165,7 @@ class OrdersTable(DBConnection):
             'comment',
             'performance_note',
         )
-        q = Query.from_(cls.table).select(*headers)
+        q = Query.from_(cls.table).select(*headers).where(cls.table.deleted == False)
         cursor.execute(str(q))
         orders = cursor.fetchall()
         result = [{k: v for k,v in zip(headers, row)} for row in orders]
@@ -177,6 +190,16 @@ class OrdersTable(DBConnection):
         cursor.execute(str(q))
         cursor.close()
         print(f"Поручение добавлено")
+
+    @classmethod
+    @DBConnection().cursor_add
+    def delete_order_row(cls, cursor, id: bytes) -> None:
+        id = id.decode('utf-8')
+        q = Query.update(cls.table).where(cls.table.id == id)\
+            .set('deleted', True)
+        cursor.execute(str(q))
+        cursor.close()
+        print(f'Строка с id {id} "удалена" из orders.')
 
     @classmethod
     @DBConnection().cursor_add
@@ -249,7 +272,8 @@ class SubOrdersTable(DBConnection):
         #Выгрзука подзадач по отдельному приказу или поручению
         id_orders = id_orders.decode('utf-8')
         headers = SubOrdersTable()._get_suborders_header()
-        q = Query.from_(cls.table).select(cls.table.star)
+        q = Query.from_(cls.table).select(cls.table.star)\
+            .where(cls.table.deleted == False)
         cursor.execute(str(q))
         suborders = cursor.fetchall()
         result = [{k: v for k,v in zip(headers, row)} for row in suborders]
@@ -271,7 +295,10 @@ class SubOrdersTable(DBConnection):
             'close_date',
             'comment',
         )
-        q = Query.from_(cls.table).select(*headers).where(cls.table.id_orders == id_orders)
+        q = Query.from_(cls.table).select(*headers)\
+            .where(
+                (cls.table.id_orders == id_orders) & (cls.table.deleted == False)
+            )
         cursor.execute(str(q))
         suborders = cursor.fetchall()
         result = [{k: v for k,v in zip(headers, row)} for row in suborders]
@@ -313,7 +340,30 @@ class SubOrdersTable(DBConnection):
         cursor.close()
         print(f'Успешно обновленны данные id:{data["id"]}')
 
+    @classmethod
+    @DBConnection().cursor_add
+    def delete_suborder_row(cls, cursor, id: bytes) -> None:
+        id = id.decode('utf-8')
+        q = Query.update(cls.table).where(cls.table.id == id)\
+            .set('deleted', True)
+        cursor.execute(str(q))
+        cursor.close()
+        print(f'Строка с id {id} "удалена" из suborders.')
 
+    @classmethod
+    @DBConnection().cursor_add
+    def _get_deleted_suborders_rows(cls, cursor) -> json:
+        headers = SubOrdersTable()._get_suborders_header()
+        q = Query.from_(cls.table).select(cls.table.star)\
+            .where(cls.table.deleted == True)
+        cursor.execute(str(q))
+        orders = cursor.fetchall()
+        result = [{k: v for k,v in zip(headers, row)} for row in orders]
+        cursor.close()
+        return json.dumps(result)
+
+
+#Не использовать, до конца не реализован.
 class ReportDatabaseWriter(OrdersTable):
     """
     Запись из Excel в базу
