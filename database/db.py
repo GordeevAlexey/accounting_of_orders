@@ -166,7 +166,7 @@ class OrdersTable(DBConnection):
         )
         cursor.execute(str(q))
         orders = cursor.fetchall()
-        result = [{k: v for k,v in zip(headers, row)} for row in orders]
+        result = [{k: v for k, v in zip(headers, row)} for row in orders]
         cursor.close()
         return json.dumps(result)
 

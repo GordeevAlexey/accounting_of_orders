@@ -47,7 +47,8 @@ async def add_task(request: Request,
         "approving_employee": str(', '.join(approving_employee)),
         "deadline": deadline,
         "comment": comment,
-        "reference": reference
+        "reference": reference,
+        "status_code": 'На исполнении'
         })
 
     OrdersTable.add_order(js)
