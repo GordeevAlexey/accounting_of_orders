@@ -1,18 +1,17 @@
-import json
-
-from database.db import DBConnection, OrdersTable, SubOrdersTable
-from datetime import datetime
-
+from database.db import DBConnection
 import uvicorn
 from fastapi import FastAPI, Form
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
 from starlette.templating import Jinja2Templates
 from send_email import Email
 from email.mime.text import MIMEText
-#from reports import Report
+from reports import OrderReport
 from fastapi.responses import StreamingResponse
+from schedule import every, run_pending, repeat
+from multiprocessing import Process
+from database.db import Dumper
+from starlette.responses import FileResponse
 
 
 app = FastAPI()
@@ -26,34 +25,48 @@ app.add_middleware(
 templates = Jinja2Templates(directory="static", autoescape=False, auto_reload=True)
 
 
+@app.get("/check_result")
+async def check_result():
+    global RESULT
+    print(RESULT)
+
+
+
 @app.post("/add_task")
 async def add_task(request: Request,
                    issue_type: str = Form(),
-                   issue_idx: str = Form(),
-                   approving_date: str = Form(),
+                   initiator: str = Form(),
                    title: str = Form(),
-                   initiator: list = Form(),
-                   approving_employee: list = Form(),
+                   issue_date: str = Form(),
+                   employee: str = Form(),
+                   status_code: str = Form(),
                    deadline: str = Form(),
+                   close_date: str = Form(),
                    comment: str = Form(),
-                   reference: str = Form()):
+                   reference: str = Form(),
+                   ):
 
-    js = json.dumps({
-        "issue_type": issue_type,
-        "issue_idx": issue_idx,
-        "approving_date": approving_date,
-        "title": title,
-        "initiator": str(', '.join(initiator)),
-        "approving_employee": str(', '.join(approving_employee)),
-        "deadline": deadline,
-        "comment": comment,
-        "reference": reference,
-        "status_code": 'На исполнении'
-        })
+    DBConnection.add_order(
+        issue_type,
+        initiator,
+        title,
+        issue_date,
+        employee,
+        status_code,
+        deadline,
+        close_date,
+        comment,
+        reference,
+    )
 
-    OrdersTable.add_order(js)
+    mail_alert_txt = MIMEText(f"{employee}, Вам назначено поручение от {initiator}. <br> "\
+                              f"<b>Срок исполнения до:</b> {deadline} <br> "\
+                              f"<b>Поручение: </b> {title}", "html")
 
-    return RedirectResponse("/", status_code=303)
+    send_Email = Email()
+    send_Email.send("sidorovich@akcept.ru", mail_alert_txt)
+
+    return templates.TemplateResponse('index.html', {'request': request})
 
 
 @app.post("/update_task")
@@ -64,41 +77,18 @@ async def update(request: Request,
     print(status)
     print(txt_close)
 
-    # DBConnection.add_order(title,
-    #                        'Гордеев Алексей Николаевич',
-    #                        initiator,
-    #                        employee,
-    #                        department,
-    #                        task_txt,
-    #                        datetime.now().strftime('%d.%m.%Y'),
-    #                        daedline,
-    #                        None,
-    #                        'В работе',
-    #                        None)
-
-    return RedirectResponse("/", status_code=303)
+    return templates.TemplateResponse('index.html', {'request': request})
 
 
-# @app.get("/get_order_report", response_description='xlsx')
-# async def get_task_order_report():
-#     #Скачивает отчет
-#     r = Report()
-#     r.get_report()
-#     headers = {
-#         'Content-Disposition': 'attachment; filename="report.xlsx"'
-#     }
-#     return StreamingResponse(r.output, headers=headers)
-
-
-@app.get("/get_order")
-async def get_order():
-    return OrdersTable().get_orders_table()
-
-
-@app.get("/get_suborder/{order_id}")
-async def get_suborder(order_id: str):
-    print(order_id)
-    return SubOrdersTable().get_suborders_table(order_id)
+@app.get("/get_data", response_description='xlsx')
+async def get_task():
+    #Скачивает отчет
+    r = OrderReport()
+    r.get_report()
+    headers = {
+        'Content-Disposition': 'attachment; filename="report.xlsx"'
+    }
+    return StreamingResponse(r.output, headers=headers)
 
 
 @app.get("/open_form")
@@ -111,9 +101,23 @@ async def start(request: Request):
     return templates.TemplateResponse('index.html', {'request': request})
 
 
+@app.get("/dump")
+async def get_dump_db():
+    #Возвращает sql дамп базы
+    dump_path = Dumper().create_dump()
+    return FileResponse(
+        dump_path,
+        media_type='application/octet-stream',
+        filename=dump_path
+    )
+
+
 if __name__ == "__main__":
+    # jobs = []
+    # p1 = Process(target=good_luck)
+    # jobs.append(p1)
+    # p1.start()
     uvicorn.run("main:app",
-                host="192.168.200.168",
-                # headers=[('server', 'top4ik')],
+                host="192.168.200.92",
                 port=8004,
                 reload=True)

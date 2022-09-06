@@ -3,7 +3,8 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 from reminder import Reminder
 from schedule import every, run_pending, repeat
-
+import sqlite3
+    
 
 @dataclass(frozen=True, slots=True)
 class OrderRow:
@@ -33,7 +34,5 @@ class Order:
 # @repeat(every().day.at("06:00"))
 @repeat(every(15).seconds)
 def check_delay_orders():
-    global three_days_delay
-    global execution_period_end
     three_days_delay = Reminder().three_days_delay
     execution_period_end= Reminder().three_days_delay 

@@ -22,18 +22,24 @@ class Reminder:
     def _form_and_send(self, days: int=0) -> None:
         if days:
             message = MIMEText(
-                f"<b>До окончания срока исполнения задачи {title} осталось {days}!</b>",
+                "<b>До окончания срока исполнения задачи {title} осталось {days}!</b>",
                 "html"
             )
         else:
             message = MIMEText(
-                f"<b>Срок исполнения задачи {title} истек!</b>",
+                "<b>Срок исполнения задачи {title} истек!</b>",
                 "html"
             )
         delay_orders = json.loads(OrdersTable.get_delay_orders(days))
         if delay_orders:
             for order in delay_orders:
                 title = order.get('title')
-                Email.send(self.phone_book.get(order['employee']), message)
-                Email.send(self.phone_book.get(order['initiator']), message)
+                Email.send(
+                    self.phone_book.get(order['employee']),
+                    message.format(title=title, days=days)
+                )
+                Email.send(
+                    self.phone_book.get(order['initiator']),
+                    message.format(title=title, days=days)
+                )
 

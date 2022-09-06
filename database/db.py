@@ -1,11 +1,13 @@
+from ast import Or
 import sqlite3
 from functools import wraps
 from pypika import Query, Table
 from uuid import uuid4
-from datetime import date, datetime
+from datetime import datetime
 import json
 import pandas as pd
 from datetime import datetime, timedelta
+import io
 
 #sqlite3.IntegrityError: UNIQUE constraint failed: USERS.email
 
@@ -60,7 +62,7 @@ class DBConnection:
 
     @classmethod
     @cursor_add
-    def execute_query(cls, cursor, query):
+    def execute_query(cls, cursor, query: str):
         cursor.execute(query)
         result = cursor.fetchall()
         cursor.close()
@@ -103,7 +105,6 @@ class OrdersTable(DBConnection):
             'initiator',
             'employee',
             'deadline',
-            'performance_note',
             'comment',
             'reference',
         )
@@ -126,47 +127,48 @@ class OrdersTable(DBConnection):
     def get_orders_table(cls, cursor) -> json:
         #Полная выгрузка
         headers = OrdersTable()._get_orders_header()
-        q = Query.from_(cls.table).select(cls.table.star)
+        q = Query.from_(cls.table).select(cls.table.star)\
+            .where(cls.table.deleted == False)
         cursor.execute(str(q))
         orders = cursor.fetchall()
         result = [{k: v for k,v in zip(headers, row)} for row in orders]
         cursor.close()
         return json.dumps(result)
     
+    @classmethod
+    @DBConnection().cursor_add
+    def _get_deleted_orders_rows(cls, cursor) -> json:
+        headers = OrdersTable()._get_orders_header()
+        q = Query.from_(cls.table).select(cls.table.star)\
+            .where(cls.table.deleted == True)
+        cursor.execute(str(q))
+        orders = cursor.fetchall()
+        result = [{k: v for k,v in zip(headers, row)} for row in orders]
+        cursor.close()
+        return json.dumps(result)
+
     #TODO: Доработать с новыми изменениями
     @classmethod
     @DBConnection().cursor_add
     def get_orders_report_data(cls, cursor) -> json:
         #Выгрузка по форме отчета
         headers = (
+            'id',
             'issue_type',
             'issue_idx',
             'approving_date',
             'title',
             'initiator',
             'approving_employee',
-            'employee',
             'deadline',
             'status_code',
             'close_date',
             'comment',
         )
-        q = Query.from_(cls.table).select(
-            cls.table.issue_type,
-            cls.table.issue_idx,
-            cls.table.approving_date,
-            cls.table.title,
-            cls.table.initiator,
-            cls.table.approving_employee,
-            cls.table.employee,
-            cls.table.deadline,
-            cls.table.status_code,
-            cls.table.close_date,
-            cls.table.comment
-        )
+        q = Query.from_(cls.table).select(*headers).where(cls.table.deleted == False)
         cursor.execute(str(q))
         orders = cursor.fetchall()
-        result = [{k: v for k, v in zip(headers, row)} for row in orders]
+        result = [{k: v for k,v in zip(headers, row)} for row in orders]
         cursor.close()
         return json.dumps(result)
 
@@ -188,6 +190,31 @@ class OrdersTable(DBConnection):
         cursor.execute(str(q))
         cursor.close()
         print(f"Поручение добавлено")
+
+    @classmethod
+    @DBConnection().cursor_add
+    def delete_order_row(cls, cursor, id: bytes) -> None:
+        """
+        Данный метод сначала помечает удаленным конкретный приказ по id,
+        далее все его подзадачи.
+        """
+        id = id.decode('utf-8')
+        q = Query.update(cls.table).where(cls.table.id == id)\
+            .set('deleted', True)
+        cursor.execute(str(q))
+        q_s = Query.from_(SubOrdersTable.table).select(SubOrdersTable.table.id)\
+            .where(
+                (SubOrdersTable.table.id_orders == id) &
+                (SubOrdersTable.table.deleted != True)
+            )
+        try:
+            suborders_ids = SubOrdersTable().execute_query(str(q_s))
+            for _id in suborders_ids:
+                SubOrdersTable().delete_suborder_row(_id.encode('utf-8'))
+        except:
+            print(f'Подзадачи по id {id} не заведены')
+        cursor.close()
+        print(f'Задача с id {id} и ее подзадачи "удалены" из orders.')
 
     @classmethod
     @DBConnection().cursor_add
@@ -258,12 +285,13 @@ class SubOrdersTable(DBConnection):
     @DBConnection().cursor_add
     def get_suborders_table(cls, cursor, id_orders: bytes) -> json:
         #Выгрзука подзадач по отдельному приказу или поручению
-        #id_orders = id_orders.decode('utf-8')
+        id_orders = id_orders.decode('utf-8')
         headers = SubOrdersTable()._get_suborders_header()
-        q = Query.from_(cls.table).select(cls.table.star).where(cls.table.field('id_orders') == id_orders)
+        q = Query.from_(cls.table).select(cls.table.star)\
+            .where(cls.table.deleted == False)
         cursor.execute(str(q))
         suborders = cursor.fetchall()
-        result = [{k: v for k, v in zip(headers, row)} for row in suborders]
+        result = [{k: v for k,v in zip(headers, row)} for row in suborders]
         cursor.close()
         return json.dumps(result)
     
@@ -277,12 +305,14 @@ class SubOrdersTable(DBConnection):
             'employee',
             'deadline',
             'content',
-            'performance_note',
             'status_code',
             'close_date',
             'comment',
         )
-        q = Query.from_(cls.table).select(*headers).where(cls.table.id_orders == id_orders)
+        q = Query.from_(cls.table).select(*headers)\
+            .where(
+                (cls.table.id_orders == id_orders) & (cls.table.deleted == False)
+            )
         cursor.execute(str(q))
         suborders = cursor.fetchall()
         result = [{k: v for k,v in zip(headers, row)} for row in suborders]
@@ -311,20 +341,69 @@ class SubOrdersTable(DBConnection):
     @classmethod
     @DBConnection().cursor_add
     def update_suborder(cls, cursor, data: json) -> None:
-        #Обязательно должен быть передан id записи
+        #Обязательно должен быть передан id записи и id_orders
         data = json.loads(data)
         q = Query.update(cls.table).where(
             (cls.table.id == data['id'])
             & (cls.table.id_orders == data['id_orders'])
-            )\
-            .set('update_date', datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
+        ).set('update_date', datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
         for key in data:
             q = q.set(key, data[key])
         cursor.execute(str(q))
+        #Проверка: если все подзадачи закрыты, то оснавная задача также автоматически закрывается
+        #Проставляется в status_code значение 'Завершено'
+        id_orders_query = Query.from_(cls.table).select(cls.table.status_code)\
+            .where(cls.table.id_orders == data['id_orders'])
+        cursor.execute(str(id_orders_query))
+        if all(
+            [True if row[0] == 'Завершено' else False for row in cursor.fetchall()]
+        ):
+            OrdersTable.update_order(json.dumps({
+                'status_code': 'Завершено',
+                'id': data['id_orders']
+            }))
         cursor.close()
         print(f'Успешно обновленны данные id:{data["id"]}')
 
+    @classmethod
+    @DBConnection().cursor_add
+    def delete_suborder_row(cls, cursor, id: bytes) -> None:
+        id = id.decode('utf-8')
+        q = Query.update(cls.table).where(cls.table.id == id)\
+            .set('deleted', True)
+        cursor.execute(str(q))
+        cursor.close()
+        print(f'Строка с id {id} "удалена" из suborders.')
 
+    @classmethod
+    @DBConnection().cursor_add
+    def _get_deleted_suborders_rows(cls, cursor) -> json:
+        headers = SubOrdersTable()._get_suborders_header()
+        q = Query.from_(cls.table).select(cls.table.star)\
+            .where(cls.table.deleted == True)
+        cursor.execute(str(q))
+        orders = cursor.fetchall()
+        result = [{k: v for k,v in zip(headers, row)} for row in orders]
+        cursor.close()
+        return json.dumps(result)
+
+
+class Dumper:
+    def create_dump(self) -> str:
+        """
+        Создает дамп базы и возрващает путь к нему
+        """
+        dump_path = 'backup.sql'
+        conn = sqlite3.connect('database.db')  
+        with io.open(dump_path, 'w') as p: 
+            for line in conn.iterdump(): 
+                p.write('%s\n' % line)
+        print('Backup performed successfully!')
+        print(f'Data Saved as {dump_path}')
+        conn.close()
+        return dump_path
+
+#Не использовать, до конца не реализован.
 class ReportDatabaseWriter(OrdersTable):
     """
     Запись из Excel в базу
@@ -357,9 +436,3 @@ class ReportDatabaseWriter(OrdersTable):
         for row in rows:
             super().add_order(row)
         
-
-
-
-
-
-
