@@ -1,6 +1,4 @@
 from database.db import DBConnection
-from datetime import datetime
-
 import uvicorn
 from fastapi import FastAPI, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,9 +8,10 @@ from send_email import Email
 from email.mime.text import MIMEText
 from reports import OrderReport
 from fastapi.responses import StreamingResponse
-import schedule
+from schedule import every, run_pending, repeat
 from multiprocessing import Process
-import time
+from database.db import Dumper
+from starlette.responses import FileResponse
 
 
 app = FastAPI()
@@ -24,21 +23,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 templates = Jinja2Templates(directory="static", autoescape=False, auto_reload=True)
-
-global RESULT
-
-
-def good_luck():
-    schedule.every(5).seconds.do(_good_luck)
-    while True: 
-        schedule.run_pending() 
-        time.sleep(1) 
-
-
-def _good_luck():
-    global RESULT
-    RESULT = "ЗАТЯНИ МНЕ ПОТУЖЕ ПЕТЛЮ МОЯ ВОЛЬНИЦА!!!!!!!!!111"
-    print('Shedle compleate')
 
 
 @app.get("/check_result")
@@ -117,11 +101,22 @@ async def start(request: Request):
     return templates.TemplateResponse('index.html', {'request': request})
 
 
+@app.get("/dump")
+async def get_dump_db():
+    #Возвращает sql дамп базы
+    dump_path = Dumper().create_dump()
+    return FileResponse(
+        dump_path,
+        media_type='application/octet-stream',
+        filename=dump_path
+    )
+
+
 if __name__ == "__main__":
-    jobs = []
-    p1 = Process(target=good_luck)
-    jobs.append(p1)
-    p1.start()
+    # jobs = []
+    # p1 = Process(target=good_luck)
+    # jobs.append(p1)
+    # p1.start()
     uvicorn.run("main:app",
                 host="192.168.200.92",
                 port=8004,

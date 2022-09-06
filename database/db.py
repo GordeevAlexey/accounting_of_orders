@@ -7,6 +7,7 @@ from datetime import datetime
 import json
 import pandas as pd
 from datetime import datetime, timedelta
+import io
 
 #sqlite3.IntegrityError: UNIQUE constraint failed: USERS.email
 
@@ -361,7 +362,6 @@ class SubOrdersTable(DBConnection):
                 'status_code': 'Завершено',
                 'id': data['id_orders']
             }))
-
         cursor.close()
         print(f'Успешно обновленны данные id:{data["id"]}')
 
@@ -387,6 +387,21 @@ class SubOrdersTable(DBConnection):
         cursor.close()
         return json.dumps(result)
 
+
+class Dumper:
+    def create_dump(self) -> str:
+        """
+        Создает дамп базы и возрващает путь к нему
+        """
+        dump_path = 'backup.sql'
+        conn = sqlite3.connect('database.db')  
+        with io.open(dump_path, 'w') as p: 
+            for line in conn.iterdump(): 
+                p.write('%s\n' % line)
+        print('Backup performed successfully!')
+        print(f'Data Saved as {dump_path}')
+        conn.close()
+        return dump_path
 
 #Не использовать, до конца не реализован.
 class ReportDatabaseWriter(OrdersTable):
