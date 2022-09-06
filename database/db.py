@@ -1,8 +1,9 @@
+from ast import Or
 import sqlite3
 from functools import wraps
 from pypika import Query, Table
 from uuid import uuid4
-from datetime import date, datetime
+from datetime import datetime
 import json
 import pandas as pd
 from datetime import datetime, timedelta
@@ -103,7 +104,6 @@ class OrdersTable(DBConnection):
             'initiator',
             'employee',
             'deadline',
-            'performance_note',
             'comment',
             'reference',
         )
@@ -163,7 +163,6 @@ class OrdersTable(DBConnection):
             'status_code',
             'close_date',
             'comment',
-            'performance_note',
         )
         q = Query.from_(cls.table).select(*headers).where(cls.table.deleted == False)
         cursor.execute(str(q))
@@ -305,7 +304,6 @@ class SubOrdersTable(DBConnection):
             'employee',
             'deadline',
             'content',
-            'performance_note',
             'status_code',
             'close_date',
             'comment',
@@ -342,16 +340,28 @@ class SubOrdersTable(DBConnection):
     @classmethod
     @DBConnection().cursor_add
     def update_suborder(cls, cursor, data: json) -> None:
-        #Обязательно должен быть передан id записи
+        #Обязательно должен быть передан id записи и id_orders
         data = json.loads(data)
         q = Query.update(cls.table).where(
             (cls.table.id == data['id'])
             & (cls.table.id_orders == data['id_orders'])
-            )\
-            .set('update_date', datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
+        ).set('update_date', datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
         for key in data:
             q = q.set(key, data[key])
         cursor.execute(str(q))
+        #Проверка: если все подзадачи закрыты, то оснавная задача также автоматически закрывается
+        #Проставляется в status_code значение 'Завершено'
+        id_orders_query = Query.from_(cls.table).select(cls.table.status_code)\
+            .where(cls.table.id_orders == data['id_orders'])
+        cursor.execute(str(id_orders_query))
+        if all(
+            [True if row[0] == 'Завершено' else False for row in cursor.fetchall()]
+        ):
+            OrdersTable.update_order(json.dumps({
+                'status_code': 'Завершено',
+                'id': data['id_orders']
+            }))
+
         cursor.close()
         print(f'Успешно обновленны данные id:{data["id"]}')
 

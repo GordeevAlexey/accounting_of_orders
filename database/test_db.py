@@ -159,7 +159,7 @@ if __name__ == "__main__":
     # TestSubOrdersTable().test_add_suborder(add_suborder_row)
     # TestSubOrdersTable().test_get_suborders_table(id_order)
     # TestSubOrdersTable().test_get_suborders_report_data(id_order)
-    # TestSubOrdersTable().test_update_suborder(update_suborder_row)
+    TestSubOrdersTable().test_update_suborder(update_suborder_row)
     # TestSubOrdersTable().test_get_delay_suborders(id_order)
     # TestOrdersTable().test_delete_order_row(id_order)
     # TestOrdersTable().test_get_orders_report_data()
