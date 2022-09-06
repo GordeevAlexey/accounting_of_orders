@@ -258,12 +258,12 @@ class SubOrdersTable(DBConnection):
     @DBConnection().cursor_add
     def get_suborders_table(cls, cursor, id_orders: bytes) -> json:
         #Выгрзука подзадач по отдельному приказу или поручению
-        id_orders = id_orders.decode('utf-8')
+        #id_orders = id_orders.decode('utf-8')
         headers = SubOrdersTable()._get_suborders_header()
-        q = Query.from_(cls.table).select(cls.table.star)
+        q = Query.from_(cls.table).select(cls.table.star).where(cls.table.field('id_orders') == id_orders)
         cursor.execute(str(q))
         suborders = cursor.fetchall()
-        result = [{k: v for k,v in zip(headers, row)} for row in suborders]
+        result = [{k: v for k, v in zip(headers, row)} for row in suborders]
         cursor.close()
         return json.dumps(result)
     

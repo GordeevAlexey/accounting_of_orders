@@ -1,6 +1,6 @@
 import json
 
-from database.db import DBConnection, OrdersTable
+from database.db import DBConnection, OrdersTable, SubOrdersTable
 from datetime import datetime
 
 import uvicorn
@@ -53,14 +53,8 @@ async def add_task(request: Request,
 
     OrdersTable.add_order(js)
 
-    # mail_alert_txt = MIMEText(f"{employee}, Вам назначено поручение от {initiator}. <br> "
-    #                           f"<b>Срок исполнения до:</b> {daedline} <br> "
-    #                           f"<b>Поручение: </b> {task_txt}", "html")
-    #
-    # send_Email = Email()
-    # send_Email.send("gordeev_an@akcept.ru", mail_alert_txt)
-
     return RedirectResponse("/", status_code=303)
+
 
 @app.post("/update_task")
 async def update(request: Request,
@@ -101,9 +95,10 @@ async def get_order():
     return OrdersTable().get_orders_table()
 
 
-@app.get("/get_suborder")
-async def get_suborder():
-    return OrdersTable().get_orders_table()
+@app.get("/get_suborder/{order_id}")
+async def get_suborder(order_id: str):
+    print(order_id)
+    return SubOrdersTable().get_suborders_table(order_id)
 
 
 @app.get("/open_form")

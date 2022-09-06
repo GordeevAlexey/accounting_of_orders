@@ -94,13 +94,23 @@
 <script type="text/javascript" src="http://192.168.200.168:8004/sandbox/static/tabulator.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-</head>>
+</head>
 
 <body>
-<input type="button" value="Добавить поручение" onclick="showModalWin()">
+<div id="orders_manual">
+    <h1>Реестр документов</h1>
+    <input type="button" value="Добавить документ" onclick="showModalWin('add_order')">
+    <input type="button" value="Удалить документ" onclick="showModalWin()">
+</div>
 <div id="orders"></div>
+<div id="suborders_manual" hidden>
+    <h1>Реестр поручений</h1>
+    <input type="button" value="Добавить поручение" onclick="showModalWin('add_suborder')">
+    <input type="button" value="Удалить поручение" onclick="showModalWin()">
+</div>
+<div id="suborders"></div>
 
-<div style="text-align: center" id="popupWin" class="modalwin">
+<div style="text-align: center" id="add_order" class="modalwin">
     <form action="/add_task" method="post">
         <select class="js-example-basic-multiple" name="issue_type" id="issue_type">
             <option value="Приказ" selected>Приказ</option>
@@ -128,6 +138,23 @@
         <input type="submit" name="submit" value="Сохранить">
     </form>
 </div>
+
+<div style="text-align: center" id="add_suborder" class="modalwin">
+    <form action="/add_task" method="post">
+        <input name="title" type="text" placeholder="Тема">
+        <select class="employee" name="approving_employee" id="employee" multiple="multiple">
+            <option value="Терехина Елена Сергеевна">Терехина Елена Сергеевна</option>
+            <option value="Косенкова Ирина Александровна">Косенкова Ирина Александровна</option>
+            <option value="Красильникова Татьяна Владимировна">Красильникова Татьяна Владимировна</option>
+            <option value="Шачнева Татьяна Алексеевна">Шачнева Татьяна Алексеевна</option>
+            <option value="Локоть Марина Борисовна">Локоть Марина Борисовна</option>
+        </select>
+        <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="Исполнить до...">
+        <input name="title" type="text" placeholder="Описание поручения">
+        <input type="submit" name="submit" value="Сохранить">
+    </form>
+</div>
+
 <script>
 
 
@@ -141,7 +168,10 @@
 
 
     var url = 'http://192.168.200.168:8004/get_order';
+
+
     $.get(url, function(response) {
+
         var orders = new Tabulator('#orders', {
         pagination: 'local',
         paginationSize: 10,
@@ -154,30 +184,51 @@
                     { title: 'Тема', field: 'title' },
                     { title: 'Инициатор', field: 'initiator' },
                     { title: 'Утверждающий руководитель', field: 'approving_employee' },
+                    { title: 'Cтатус', field: 'status_code'},
                     { title: 'Срок исполнения', field: 'deadline' },
                     { title: 'Примечание', field: 'comment' },
                     { title: 'Ссылка', field: 'reference ' }
                  ],
 
+
         rowClick:function(e, row){
-            if (row.getData().status_code == 'В работе') {
-                $("form").show(300)
+            if (row.getData().status_code == 'На исполнении') {
+
+                var url = `http://192.168.200.168:8004/get_suborder/${row.getData().id}`;
+                $.get(url, function(response) {
+                var suborders = new Tabulator('#suborders', {
+                pagination: 'local',
+                paginationSize: 10,
+                data: JSON.parse(response),
+                layout: 'fitColumns',
+                columns: [
+                            { title: 'Дата создания', field: 'create_date'},
+                            { title: 'Тема', field: 'title'},
+                            { title: 'Исполнитель', field: 'employee'},
+                            { title: 'Срок исполнения', field: 'deadline'},
+                            { title: 'Текст поручения', field: 'content'},
+                            { title: 'Статус', field: 'status_code'},
+                            { title: 'Комментарии', field: 'comment'}
+                         ]})})
+                $("#suborders").show(300)
+                $("#suborders_manual").show(300)
             } else {
-              $("form").hide(300)
+              $("#suborders").hide(300)
+              $("#suborders_manual").hide(300)
             }
 }
 });
     });
-
 });
 </script>
+
 <script>
     function showModalWin() {
         var darkLayer = document.createElement('div'); // слой затемнения
         darkLayer.id = 'shadow'; // id чтобы подхватить стиль
         document.body.appendChild(darkLayer); // включаем затемнение
 
-        var modalWin = document.getElementById('popupWin'); // находим наше "окно"
+        var modalWin = document.getElementById(arguments[0]); // находим наше "окно"
         modalWin.style.display = 'block'; // "включаем" его
 
         darkLayer.onclick = function () {  // при клике на слой затемнения все исчезнет
