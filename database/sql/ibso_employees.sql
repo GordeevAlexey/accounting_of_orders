@@ -8,4 +8,4 @@ SELECT
     C_9 private_person
 FROM
     IBS.VW_CRIT_USER
-where C_11 is null and C_9 is not null
+where C_11 is null and C_9 is not null order by C_9

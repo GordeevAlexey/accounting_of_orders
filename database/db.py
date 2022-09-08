@@ -68,6 +68,7 @@ class DBConnection:
         cursor.close()
         return result
 
+
 class OrdersTable(DBConnection):
     """
     Работа с таблицей Поручений
@@ -285,10 +286,11 @@ class SubOrdersTable(DBConnection):
     @DBConnection().cursor_add
     def get_suborders_table(cls, cursor, id_orders: bytes) -> json:
         #Выгрзука подзадач по отдельному приказу или поручению
-        id_orders = id_orders.decode('utf-8')
+#       id_orders = id_orders.decode('utf-8')
         headers = SubOrdersTable()._get_suborders_header()
         q = Query.from_(cls.table).select(cls.table.star)\
-            .where(cls.table.deleted == False)
+            .where(cls.table.deleted == False and
+                   cls.table.ID_ORDERS == id_orders)
         cursor.execute(str(q))
         suborders = cursor.fetchall()
         result = [{k: v for k,v in zip(headers, row)} for row in suborders]
@@ -315,7 +317,7 @@ class SubOrdersTable(DBConnection):
             )
         cursor.execute(str(q))
         suborders = cursor.fetchall()
-        result = [{k: v for k,v in zip(headers, row)} for row in suborders]
+        result = [{k: v for k, v in zip(headers, row)} for row in suborders]
         cursor.close()
         return json.dumps(result)
 
@@ -402,6 +404,7 @@ class Dumper:
         print(f'Data Saved as {dump_path}')
         conn.close()
         return dump_path
+
 
 #Не использовать, до конца не реализован.
 class ReportDatabaseWriter(OrdersTable):

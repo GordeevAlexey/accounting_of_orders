@@ -57,6 +57,12 @@ class Employees(IBSO):
         employees = dict(zip(groupped_divisions.DIVISION, groupped_divisions.PRIVATE_PERSON))
         return json.dumps(employees)
 
+    def get_employees_for_selected(self) -> json:
+        df = self._get_data_from_db()
+        df = df.PRIVATE_PERSON
+        employees = dict(zip(df, df))
+        return json.dumps(employees)
+
     @staticmethod
     def get_phone_book() -> json:
         """
@@ -70,11 +76,31 @@ class Employees(IBSO):
             table = tuple(map(lambda x: x.text.replace('\n', ''), table))
             phonebook.update(
                 {
-                table[3]: {
+                    table[3]: {
                     'position': table[5],
                     'mail': table[9],
                     'phone': table[11] or '-',
+                    }
                 }
-            }
-        )
+            )
+        return json.dumps(phonebook)
+
+    @staticmethod
+    def get_phone_book_for_selected() -> json:
+        """
+        Тянет ФИО с портала для заполнения выпадающих списков
+        """
+        phonebook = {}
+        r = requests.get('http://portal/phonebook')
+        soup = bs(r.text, "html.parser")
+        main_table = soup.find_all('tr', class_='usTblContent')
+        for table in main_table:
+            table = tuple(map(lambda x: x.text.replace('\n', ''), table))
+            if table[9] != "":
+                phonebook.update(
+                    {
+                        table[3]: table[3]
+                    }
+                )
+
         return json.dumps(phonebook)

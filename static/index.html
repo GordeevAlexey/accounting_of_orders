@@ -111,27 +111,18 @@
 <div id="suborders"></div>
 
 <div style="text-align: center" id="add_order" class="modalwin">
-    <form action="/add_task" method="post">
+    <form action="/add_order" method="post">
         <select class="js-example-basic-multiple" name="issue_type" id="issue_type">
             <option value="Приказ" selected>Приказ</option>
         </select>
         <input name="issue_idx" type="text" placeholder="Номер №">
         <input name="approving_date" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="Дата утверждения">
         <input name="title" type="text" placeholder="Тема">
-        <select class="initiator" name="initiator" multiple="multiple" placeholder="Инициатор">
-            <option value="Терехина Елена Сергеевна">Терехина Елена Сергеевна</option>
-            <option value="Косенкова Ирина Александровна">Косенкова Ирина Александровна</option>
-            <option value="Красильникова Татьяна Владимировна">Красильникова Татьяна Владимировна</option>
-            <option value="Шачнева Татьяна Алексеевна">Шачнева Татьяна Алексеевна</option>
-            <option value="Локоть Марина Борисовна">Локоть Марина Борисовна</option>
-        </select><br><br>
-        <select class="approving_employee" name="approving_employee" id="approving_employee" multiple="multiple">
-            <option value="Терехина Елена Сергеевна">Терехина Елена Сергеевна</option>
-            <option value="Косенкова Ирина Александровна">Косенкова Ирина Александровна</option>
-            <option value="Красильникова Татьяна Владимировна">Красильникова Татьяна Владимировна</option>
-            <option value="Шачнева Татьяна Алексеевна">Шачнева Татьяна Алексеевна</option>
-            <option value="Локоть Марина Борисовна">Локоть Марина Борисовна</option>
-        </select>
+
+        <select class="initiator" name="initiator" id="initiator" multiple="multiple"></select>
+        <br><br>
+        <select class="approving_employee" name="approving_employee" id="approving_employee" multiple="multiple"></select>
+
         <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="Срок исполнения">
         <input name="comment" type="text" placeholder="Примечание">
         <input name="reference" type="text" placeholder="Ссылка">
@@ -140,17 +131,11 @@
 </div>
 
 <div style="text-align: center" id="add_suborder" class="modalwin">
-    <form action="/add_task" method="post">
-        <input name="title" type="text" placeholder="Тема">
-        <select class="employee" name="approving_employee" id="employee" multiple="multiple">
-            <option value="Терехина Елена Сергеевна">Терехина Елена Сергеевна</option>
-            <option value="Косенкова Ирина Александровна">Косенкова Ирина Александровна</option>
-            <option value="Красильникова Татьяна Владимировна">Красильникова Татьяна Владимировна</option>
-            <option value="Шачнева Татьяна Алексеевна">Шачнева Татьяна Алексеевна</option>
-            <option value="Локоть Марина Борисовна">Локоть Марина Борисовна</option>
-        </select>
+    <form action="/add_suborder" method="post">
+        <select class="employee" name="employee" id="employee" multiple="multiple"></select>
         <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="Исполнить до...">
-        <input name="title" type="text" placeholder="Описание поручения">
+        <input name="content" type="text" placeholder="Описание поручения">
+        <input name="current_order_id" id="current_order_id" type="text" hidden>
         <input type="submit" name="submit" value="Сохранить">
     </form>
 </div>
@@ -166,13 +151,15 @@
     $('.approving_employee').select2({
         placeholder: "Выбирите утверждающего руководителя"});
 
+    $('.employee').select2({
+        placeholder: "Выбирите исполнителя"});
 
     var url = 'http://192.168.200.168:8004/get_order';
-
 
     $.get(url, function(response) {
 
         var orders = new Tabulator('#orders', {
+        selectable: 1,
         pagination: 'local',
         paginationSize: 10,
         data: JSON.parse(response),
@@ -197,13 +184,12 @@
                 var url = `http://192.168.200.168:8004/get_suborder/${row.getData().id}`;
                 $.get(url, function(response) {
                 var suborders = new Tabulator('#suborders', {
+                selectable: 1,
                 pagination: 'local',
                 paginationSize: 10,
                 data: JSON.parse(response),
                 layout: 'fitColumns',
                 columns: [
-                            { title: 'Дата создания', field: 'create_date'},
-                            { title: 'Тема', field: 'title'},
                             { title: 'Исполнитель', field: 'employee'},
                             { title: 'Срок исполнения', field: 'deadline'},
                             { title: 'Текст поручения', field: 'content'},
@@ -211,9 +197,11 @@
                             { title: 'Комментарии', field: 'comment'}
                          ]})})
                 $("#suborders").show(300)
+                $("#current_order_id").val(row.getData().id)
                 $("#suborders_manual").show(300)
             } else {
               $("#suborders").hide(300)
+              $("#current_order_id").val("")
               $("#suborders_manual").hide(300)
             }
 }
@@ -239,6 +227,28 @@
         }
 </script>
 
+<script>
+
+    var users = $.get( "http://192.168.200.168:8004/get_users", function(response) {
+
+    $.each(response, function(key, value) {
+        $('#approving_employee, #initiator, #employee')
+        .append($("<option></option>")
+                    .attr("value", key)
+                    .text(value));
+});
+
+        });
+
+<!--    alert(JSON.parse(users))-->
+
+<!--    $.each(JSON.parse(users), function(key, value) {-->
+<!--     $('#approving_employee')-->
+<!--         .append($("<option></option>")-->
+<!--                    .attr("value", key)-->
+<!--                    .text(value));-->
+<!--});-->
+</script>
 
 </body>
 
