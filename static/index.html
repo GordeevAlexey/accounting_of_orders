@@ -42,7 +42,7 @@
             textarea{
                 font-family: Verdana;
                 font-size: 30;
-                width:1660px;
+                width:400px;
                 height:400px;
                 padding:18px;
                 border-radius: 10px;
@@ -100,13 +100,14 @@
 <div id="orders_manual">
     <h1>Реестр документов</h1>
     <input type="button" value="Добавить документ" onclick="showModalWin('add_order')">
-    <input type="button" value="Удалить документ" onclick="showModalWin()">
+<!--    <input type="button" value="Удалить документ" onclick="showModalWin()">-->
 </div>
 <div id="orders"></div>
 <div id="suborders_manual" hidden>
     <h1>Реестр поручений</h1>
     <input type="button" value="Добавить поручение" onclick="showModalWin('add_suborder')">
-    <input type="button" value="Удалить поручение" onclick="showModalWin()">
+<!--    <input type="button" value="Удалить поручение" onclick="showModalWin()">-->
+    <input type="button" id="close_task" value="Закрыть поручение" onclick="showModalWin('close_suborder')" hidden>
 </div>
 <div id="suborders"></div>
 
@@ -126,6 +127,7 @@
         <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="Срок исполнения">
         <input name="comment" type="text" placeholder="Примечание">
         <input name="reference" type="text" placeholder="Ссылка">
+
         <input type="submit" name="submit" value="Сохранить">
     </form>
 </div>
@@ -134,16 +136,23 @@
     <form action="/add_suborder" method="post">
         <select class="employee" name="employee" id="employee" multiple="multiple"></select>
         <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="Исполнить до...">
-        <input name="content" type="text" placeholder="Описание поручения">
-        <input name="current_order_id" id="current_order_id" type="text" hidden>
+        <textarea name="content" type="text" placeholder="Описание поручения"></textarea>
         <input type="submit" name="submit" value="Сохранить">
+        <input name="current_order_id1" id="current_order_id1" type="text" hidden>
+    </form>
+</div>
+
+<div style="text-align: center" id="close_suborder" class="modalwin">
+    <form action="/close_suborder" method="post">
+        <textarea name="comment" type="text" placeholder="Комментарии"></textarea>
+        <input type="submit" name="submit" value="Закрыть">
+        <input name="current_order_id" id="current_order_id" type="text" hidden>
+        <input name="current_suborder_id" id="current_suborder_id" type="text" hidden>
     </form>
 </div>
 
 <script>
-
-
-    $(document).ready(function() {
+$(document).ready(function() {
 
     $('.initiator').select2({
         placeholder: "Выбирите инициатора"});
@@ -179,33 +188,49 @@
 
 
         rowClick:function(e, row){
-            if (row.getData().status_code == 'На исполнении') {
+            if (row.getData().status_code == 'На исполнении' || row.getData().status_code == 'Завершено') {
 
                 var url = `http://192.168.200.168:8004/get_suborder/${row.getData().id}`;
-                $.get(url, function(response) {
-                var suborders = new Tabulator('#suborders', {
-                selectable: 1,
-                pagination: 'local',
-                paginationSize: 10,
-                data: JSON.parse(response),
-                layout: 'fitColumns',
-                columns: [
-                            { title: 'Исполнитель', field: 'employee'},
-                            { title: 'Срок исполнения', field: 'deadline'},
-                            { title: 'Текст поручения', field: 'content'},
-                            { title: 'Статус', field: 'status_code'},
-                            { title: 'Комментарии', field: 'comment'}
-                         ]})})
+                    $.get(url, function(response) {
+                    var suborders = new Tabulator('#suborders', {
+                    selectable: 1,
+                    pagination: 'local',
+                    paginationSize: 10,
+                    data: JSON.parse(response),
+                    layout: 'fitColumns',
+                    columns: [
+                                { title: 'Исполнитель', field: 'employee'},
+                                { title: 'Срок исполнения', field: 'deadline'},
+                                { title: 'Текст поручения', field: 'content'},
+                                { title: 'Статус', field: 'status_code'},
+                                { title: 'Комментарии', field: 'comment'}
+                             ],
+
+                    rowClick:function(e, row){
+                        if (row.getData().status_code == 'На исполнении') {
+                            $("#current_suborder_id").val(row.getData().id)
+                            $("#close_task").show(300)
+                        } else {
+                            $("#close_task").hide(300)
+                            $("#current_suborder_id").val("")
+                        }
+                    }
+
+                    })
+                })
                 $("#suborders").show(300)
                 $("#current_order_id").val(row.getData().id)
+                $("#current_order_id1").val(row.getData().id)
                 $("#suborders_manual").show(300)
             } else {
               $("#suborders").hide(300)
               $("#current_order_id").val("")
+              $("#current_order_id1").val("")
               $("#suborders_manual").hide(300)
             }
-}
-});
+        }
+
+        });
     });
 });
 </script>

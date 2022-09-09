@@ -5,7 +5,7 @@ from database.ibso import Employees
 from datetime import datetime
 
 import uvicorn
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, Body
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
@@ -59,13 +59,13 @@ async def add_order(request: Request,
 
 @app.post("/add_suborder")
 async def add_suborder(request: Request,
-                   current_order_id: str = Form(),
+                   current_order_id1: str = Form(),
                    employee: list = Form(),
                    deadline: str = Form(),
                    content: str = Form()):
 
     js = json.dumps({
-        "id_orders": current_order_id,
+        "id_orders": current_order_id1,
         "employee": str(', '.join(employee)),
         "deadline": deadline,
         "content": content,
@@ -73,17 +73,27 @@ async def add_suborder(request: Request,
         })
 
     SubOrdersTable.add_suborder(js)
+    for user in employee:
+        print(user)
+    #Email.send()
 
     return RedirectResponse("/", status_code=303)
 
 
-@app.post("/update_task")
+@app.post("/close_suborder")
 async def update(request: Request,
-                      txt_close: str = Form(),
-                      status: str = Form()):
+                current_order_id: str = Body(),
+                current_suborder_id: str = Body(),
+                comment: str = Form()):
 
-    print(status)
-    print(txt_close)
+    js = json.dumps({
+        "id_orders": current_order_id,
+        "id": current_suborder_id,
+        "status_code": "Завершено",
+        "comment": comment
+    })
+
+    SubOrdersTable.update_suborder(js)
 
     return RedirectResponse("/", status_code=303)
 
