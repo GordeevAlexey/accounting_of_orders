@@ -111,7 +111,8 @@ async def update(request: Request,
 
 @app.get("/get_order")
 async def get_order():
-    return OrdersTable().get_orders_table()
+    print(OrdersTable().get_orders_table_pg_bar())
+    return OrdersTable().get_orders_table_pg_bar()
 
 
 @app.get("/get_suborder/{order_id}")

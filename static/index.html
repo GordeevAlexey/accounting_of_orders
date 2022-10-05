@@ -5,12 +5,14 @@
     <title>Система учета поручений</title>
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/css/tabulator.min.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/css/bootstrap/tabulator_bootstrap4.min.css" rel="stylesheet">
+<!--<link href="https://github.com/olifolkerd/tabulator/blob/master/dist/css/tabulator_materialize.min.css" rel="stylesheet">-->
+<!--<link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/css/bootstrap/tabulator_bootstrap4.min.css" rel="stylesheet">-->
+<link href="static/tabulator.min.css" rel="stylesheet">
 <style>
             <style>
 
-                body {
-                background-color: white
+            body {
+                background-color: white;
                  }
 
             img {
@@ -28,7 +30,17 @@
                 text-align:center;
                  }
 
+            h1 {
+                font-variant: small-caps;
+                color: rgba(0, 0, 153,.7)
+                }
+
+            orders {
+            font-variant: small-caps;
+            }
+
             .btn, input, select {
+                font-variant: small-caps;
                 width:400px;
                 padding:18px;
                 border-radius: 10px;
@@ -56,10 +68,20 @@
             input:hover, input:focus,
             button:hover, button:focus,
             select:hover, select:focus {
-            box-shadow:0 0 15px 2px rgba(60,123,68,.7);
-            outline:0;
+                box-shadow:0 0 15px 2px rgba(60,123,68,.7);
+                background: rgba(60,123,68,.1);
+                outline:0;
             }
 
+            #delete_suborder_btn:hover, #delete_suborder_btn:focus {
+                box-shadow:0 0 15px 2px rgba(245,80,80,.7);
+                background: rgba(245,80,80,.1);
+            }
+
+            #update_suborder_btn:hover, #update_suborder_btn:focus {
+                box-shadow:0 0 15px 2px rgba(204,204,0,.7);
+                background: rgba(204,204,0,.1);
+            }
 </style>
 <style>
             .modalwin {
@@ -105,9 +127,12 @@
 <div id="orders"></div>
 <div id="suborders_manual" hidden>
     <h1>Реестр поручений</h1>
-    <input type="button" value="Добавить поручение" onclick="showModalWin('add_suborder')">
-<!--    <input type="button" value="Удалить поручение" onclick="showModalWin()">-->
-    <input type="button" id="close_task" value="Закрыть поручение" onclick="showModalWin('close_suborder')" hidden>
+    <input id="add_task" type="button" value="Добавить поручение" onclick="showModalWin('add_suborder')">
+    <input id="close_task" type="button" value="Закрыть поручение" onclick="showModalWin('close_suborder')" hidden>
+    <br>
+    <input id="update_suborder_btn" type="button" value="Редактировать поручение" onclick="showModalWin()" hidden>
+    <input id="delete_suborder_btn" type="button" value="Удалить поручение" onclick="showModalWin()" hidden>
+
 </div>
 <div id="suborders"></div>
 
@@ -181,13 +206,19 @@ $(document).ready(function() {
                     { title: 'Инициатор', field: 'initiator' },
                     { title: 'Утверждающий руководитель', field: 'approving_employee' },
                     { title: 'Cтатус', field: 'status_code'},
+                    { title: 'Прогресс', field: 'progress', sorter: 'number', formatter: 'progress', editorParams:{min:1, max:100}},
                     { title: 'Срок исполнения', field: 'deadline' },
                     { title: 'Примечание', field: 'comment' },
-                    { title: 'Ссылка', field: 'reference ' }
+                    { title: 'Ссылка', field: 'reference' }
                  ],
 
-
         rowClick:function(e, row){
+
+                 $("#current_suborder_id").val("")
+                 $("#close_task").hide(300)
+                 $("#delete_suborder_btn").hide(300)
+                 $("#update_suborder_btn").hide(300)
+
             if (row.getData().status_code == 'На исполнении' || row.getData().status_code == 'Завершено') {
 
                 var url = `http://192.168.200.168:8004/get_suborder/${row.getData().id}`;
@@ -203,36 +234,53 @@ $(document).ready(function() {
                                 { title: 'Срок исполнения', field: 'deadline'},
                                 { title: 'Текст поручения', field: 'content'},
                                 { title: 'Статус', field: 'status_code'},
+                                { title: 'Состояние', field:"condition", formatter:"tickCross"},
                                 { title: 'Комментарии', field: 'comment'}
                              ],
 
                     rowClick:function(e, row){
                         if (row.getData().status_code == 'На исполнении') {
-                            $("#current_suborder_id").val(row.getData().id)
-                            $("#close_task").show(300)
+                            visible_element_suborder(row)
                         } else {
-                            $("#close_task").hide(300)
-                            $("#current_suborder_id").val("")
+                            hide_element_suborder()
                         }
                     }
 
                     })
+
                 })
                 $("#suborders").show(300)
                 $("#current_order_id").val(row.getData().id)
                 $("#current_order_id1").val(row.getData().id)
                 $("#suborders_manual").show(300)
+
             } else {
               $("#suborders").hide(300)
               $("#current_order_id").val("")
               $("#current_order_id1").val("")
               $("#suborders_manual").hide(300)
+
             }
         }
 
         });
     });
 });
+
+function visible_element_suborder(row) {
+    $("#current_suborder_id").val(row.getData().id)
+    $("#close_task").show(300)
+    $("#delete_suborder_btn").show(300)
+    $("#update_suborder_btn").show(300)
+}
+
+function hide_element_suborder() {
+    $("#current_suborder_id").val("")
+    $("#close_task").hide(300)
+    $("#delete_suborder_btn").hide(300)
+    $("#update_suborder_btn").hide(300)
+}
+
 </script>
 
 <script>
@@ -261,18 +309,8 @@ $(document).ready(function() {
         .append($("<option></option>")
                     .attr("value", key)
                     .text(value));
-});
-
-        });
-
-<!--    alert(JSON.parse(users))-->
-
-<!--    $.each(JSON.parse(users), function(key, value) {-->
-<!--     $('#approving_employee')-->
-<!--         .append($("<option></option>")-->
-<!--                    .attr("value", key)-->
-<!--                    .text(value));-->
-<!--});-->
+    });
+    });
 </script>
 
 </body>
