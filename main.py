@@ -138,13 +138,14 @@ async def get_suborder(order_id: str):
 
 @app.get("/close_suborder/{suborder_id}")
 async def close_suborder(suborder_id: str, request: Request):
+
     return templates.TemplateResponse('close_suborder.html',
                                       {'request': request, 'suborder_id': suborder_id})
 
 
 @app.get("/get_info_for_close_suborder/{suborder_id}")
 async def get_info_for_close_suborder(suborder_id: str):
-    l = "'" + str(ReportDatabaseWriter.get_info(suborder_id)[0]) + "'"
+    l = ReportDatabaseWriter.get_info(suborder_id)
     print(l)
     return l
 

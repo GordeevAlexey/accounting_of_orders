@@ -530,4 +530,4 @@ class ReportDatabaseWriter(OrdersTable):
         orders = cursor.fetchall()
         result = [{k: v for k, v in zip(headers, row)} for row in orders]
         cursor.close()
-        return result
+        return json.dumps(result)

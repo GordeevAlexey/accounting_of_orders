@@ -132,34 +132,70 @@
             <td><input type="date" id="deadline_suborder" readonly></td>
         </tr>
         <tr>
+            <td><label for="status_code">Статус поручения</label></td>
+            <td><input type="text" id="status_code" readonly></td>
+        </tr>
+        <tr>
             <td><label for="content">Текст поручения</label></td>
             <td><input style="height:130px" type="text" id="content" readonly></td>
         </tr>
 
+    <form action="" id="close_suborder_form" method="post" onsubmit="return addActionForm('close_suborder', 'close_suborder');">
         <tr>
             <td><label for="comment_suborder">Комментарии</label></td>
             <td><input style="height:130px" type="text" id="comment_suborder" readonly></td>
         </tr>
         <tr>
             <td></td>
-            <td><input id="submit_up" type="submit" value="Закрыть поручение"></td>
+            <td><input id="submit_up" type="submit" value="Закрыть поручение" hidden></td>
         </tr>
+    </form>
+
     </table>
 
 <script>
 
     $(document).ready(function() {
+
         url = 'http://192.168.200.168:8004/get_info_for_close_suborder/{{ suborder_id }}'
         $.get(url, function(response) {
+            var info = JSON.parse(response)[0]
 
-            var r = JSON.parse(response)
-            alert(r.issue_idx)
+            $("#issue_type").val(info.issue_type);
+            $("#issue_idx").val(info.issue_idx);
+            $("#approving_date").val(info.approving_date);
+            $("#title").val(info.title);
+            $("#initiator").val(info.initiator);
+            $("#approving_employee").val(info.approving_employee);
+            $("#deadline").val(info.deadline);
+            $("#comment").val(info.comment);
+            $("#employee").val(info.employee);
+            $("#status_code").val(info.status_code);
+            $("#deadline_suborder").val(info.deadline_suborder);
+            $("#content").val(info.content);
+            $("#comment_suborder").val(info.comment_suborder);
+
+            if (info.status_code == 'На исполнении'){
+                $("#submit_up").show(300)
+            }
+            else {
+                $("#submit_up").hide(300)
+            }
 
             });
 
         });
 
+    function addActionForm() {
+        var order_id = escape(document.getElementById('current_order_id').value);
+        var suborder_id = escape(document.getElementById('current_suborder_id').value);
 
+        if (arguments[1] == 'add_suborder' || arguments[1] == 'add_suborder'){
+            document.getElementById(arguments[0]).action = '/' + arguments[1] + '/' + order_id
+        } else {
+            document.getElementById(arguments[0]).action = '/' + arguments[1] + '/' + order_id + '/' + suborder_id
+    }
+}
 
 </script>
 
