@@ -188,14 +188,7 @@
 <input name="current_order_id" id="current_order_id" type="text" hidden>
 <input name="current_suborder_id" id="current_suborder_id" type="text" hidden>
 
-<button id="select-row">Селект уан</button>
-
 <script>
-
-document.getElementById("select-row").addEventListener("click", function(){
-    alert(orders)
-    orders.selectRow(2);
-})
 
 $(document).ready(function() {
     $('#initiator').select2({
@@ -213,8 +206,6 @@ $(document).ready(function() {
     var url = 'http://192.168.200.168:8004/get_order';
 
     $.get(url, function(response) {
-
-        alert(response);
 
         var orders = new Tabulator('#orders', {
         selectable: 1,

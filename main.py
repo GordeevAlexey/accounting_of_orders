@@ -103,13 +103,13 @@ async def update_suborder(current_order_id: str,
 @app.post("/close_suborder/{current_order_id}/{current_suborder_id}")
 async def close_suborder(current_order_id: str,
                          current_suborder_id: str,
-                         comment: str = Form()):
-
+                         ):
+    #comment_suborder: str = Form()
     js = json.dumps({
         "id_orders": current_order_id,
         "id": current_suborder_id,
         "status_code": "Завершено",
-        "comment": comment
+     #   "comment": comment_suborder
     })
 
     SubOrdersTable.update_suborder(js)
@@ -126,8 +126,6 @@ async def delete_suborder(current_order_id: str,
 
 @app.get("/get_order")
 async def get_order():
-    x = OrdersTable().get_orders_table_pg_bar()
-    print(x)
     return OrdersTable().get_orders_table_pg_bar()
 
 
@@ -138,16 +136,13 @@ async def get_suborder(order_id: str):
 
 @app.get("/close_suborder/{suborder_id}")
 async def close_suborder(suborder_id: str, request: Request):
-
     return templates.TemplateResponse('close_suborder.html',
                                       {'request': request, 'suborder_id': suborder_id})
 
 
 @app.get("/get_info_for_close_suborder/{suborder_id}")
 async def get_info_for_close_suborder(suborder_id: str):
-    l = ReportDatabaseWriter.get_info(suborder_id)
-    print(l)
-    return l
+    return ReportDatabaseWriter.get_info(suborder_id)
 
 
 @app.get("/")

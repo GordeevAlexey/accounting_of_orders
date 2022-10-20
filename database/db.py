@@ -506,13 +506,15 @@ class ReportDatabaseWriter(OrdersTable):
     @classmethod
     @DBConnection().cursor_add
     def get_info(cls, cursor, uuid_suboder):
-        headers = ["issue_type", "issue_idx", "approving_date", "title", "initiator", "approving_employee",
-                   "deadline", "comment", "employee", "deadline_suborder", "status_code", "content", "comment_suborder"]
+        headers = ["id_order", "issue_type", "issue_idx", "approving_date", "title", "initiator", "approving_employee",
+                   "deadline", "comment", "id_suborder", "employee", "deadline_suborder", "status_code", "content",
+                   "comment_suborder"]
         q = Query\
             .from_(cls.table_sub_orders)\
             .join(cls.table)\
             .on(cls.table_sub_orders.id_orders == cls.table.id)\
-            .select(cls.table.issue_type,
+            .select(cls.table.id,
+                    cls.table.issue_type,
                     cls.table.issue_idx,
                     cls.table.approving_date,
                     cls.table.title,
@@ -520,6 +522,7 @@ class ReportDatabaseWriter(OrdersTable):
                     cls.table.approving_employee,
                     cls.table.deadline,
                     cls.table.comment,
+                    cls.table_sub_orders.id,
                     cls.table_sub_orders.employee,
                     cls.table_sub_orders.deadline,
                     cls.table_sub_orders.status_code,
