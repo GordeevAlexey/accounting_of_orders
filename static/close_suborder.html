@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Закрытие поручения</title>
+
+<style>
+            <style>
+
+            body {
+                background-color: white;
+                 }
+
+            img {
+            width: 250px;
+            align: center;
+                }
+
+            p {
+            font-family: sans-serif;
+            font-size: 30px;
+            text-align: center
+            }
+
+            form {
+                text-align:center;
+                 }
+
+            h1, label{
+                font-variant: small-caps;
+                color: rgba(0, 0, 153,.7)
+                }
+
+            orders {
+            font-variant: small-caps;
+            }
+
+            .btn, input, select {
+                font-variant: small-caps;
+                width:400px;
+                padding:18px;
+                border-radius: 10px;
+                border:0;
+                box-shadow:0 0 15px 2px rgba(60,74,123,.7);
+                border-bottom:1px ;
+                box-sizing: border-box;
+                margin:8px
+            }
+
+            textarea{
+                font-family: Verdana;
+                font-size: 30;
+                width:400px;
+                height:400px;
+                padding:18px;
+                border-radius: 10px;
+                border:0;
+                box-shadow:0 0 15px 2px rgba(60,74,123,.7);
+                border-bottom:1px ;
+                box-sizing: border-box;
+                margin:8px
+            }
+
+<!--            input:hover, input:focus,-->
+<!--            button:hover, button:focus,-->
+<!--            select:hover, select:focus {-->
+<!--                box-shadow:0 0 15px 2px rgba(60,123,68,.7);-->
+<!--                background: rgba(60,123,68,.1);-->
+<!--                outline:0;-->
+<!--            }-->
+
+</style>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+
+<body>
+
+
+
+    <table id="order_table" style="float: left">
+        <tr>
+            <td></td>
+            <td><h1 style="text-align: left">Информация о приказе</h1></td>
+        </tr>
+        <tr>
+            <td><label for="issue_type">Вид поручения</label></td>
+            <td><input type="text" id="issue_type" readonly></td>
+        </tr>
+        <tr>
+            <td><label for="issue_idx">Номер приказа</label></td>
+            <td><input type="text" id="issue_idx" readonly></td>
+        </tr>
+        <tr>
+            <td><label for="approving_date">Дата утверждения</label></td>
+            <td><input type="date" id="approving_date" readonly></td>
+        </tr>
+
+        <tr>
+            <td><label for="title">Тема</label></td>
+            <td><input type="text" id="title" readonly></td>
+        </tr>
+        <tr>
+            <td><label for="initiator">Инициатор</label></td>
+            <td><input type="text" id="initiator" readonly></td>
+        </tr>
+        <tr>
+            <td><label for="approving_employee">Утверждающий руководитель</label></td>
+            <td><input type="text" id="approving_employee" readonly></td>
+        </tr>
+        <tr>
+            <td><label for="deadline">Дедлайн</label></td>
+            <td><input type="date" id="deadline" readonly></td>
+        </tr>
+        <tr>
+            <td><label for="comment">Коментарии</label></td>
+            <td><input type="text" id="comment" readonly></td>
+        </tr>
+    </table>
+
+
+    <table id="suborder_table" style="float: left">
+        <tr>
+            <td></td>
+            <td><h1 style="text-align: left">Информация о поручении</h1></td>
+        </tr>
+        <tr>
+            <td><label for="employee">Исполнитель</label></td>
+            <td><input type="text" id="employee" readonly></td>
+        </tr>
+        <tr>
+            <td><label for="deadline_suborder">Срок исполнения</label></td>
+            <td><input type="date" id="deadline_suborder" readonly></td>
+        </tr>
+        <tr>
+            <td><label for="content">Текст поручения</label></td>
+            <td><input style="height:130px" type="text" id="content" readonly></td>
+        </tr>
+
+        <tr>
+            <td><label for="comment_suborder">Комментарии</label></td>
+            <td><input style="height:130px" type="text" id="comment_suborder" readonly></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><input id="submit_up" type="submit" value="Закрыть поручение"></td>
+        </tr>
+    </table>
+
+<script>
+
+    $(document).ready(function() {
+        url = 'http://192.168.200.168:8004/get_info_for_close_suborder/{{ suborder_id }}'
+        $.get(url, function(response) {
+
+            var r = JSON.parse(response)
+            alert(r.issue_idx)
+
+            });
+
+        });
+
+
+
+</script>
+
+</body>
+
+</html>

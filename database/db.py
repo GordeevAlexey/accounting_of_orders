@@ -135,18 +135,21 @@ class OrdersTable(DBConnection):
                          /
                          Query.from_(cls.table_sub_orders)
                                               .select(fn.Count(cls.table_sub_orders))
-                                              .where(cls.table_sub_orders.id_orders == cls.table.id))
+                                              .where((cls.table_sub_orders.id_orders == cls.table.id)
+                                                    & (cls.table_sub_orders.deleted == False)))
                          *
                          Query.from_(cls.table_sub_orders)
                          .select(fn.Count(cls.table_sub_orders))
                          .where((cls.table_sub_orders.id_orders == cls.table.id)
-                                & (cls.table_sub_orders.status_code == "Завершено"))
+                                & (cls.table_sub_orders.status_code == "Завершено")
+                                & (cls.table_sub_orders.deleted == False))
                          )\
                  .where(cls.table.deleted == False)
 
         cursor.execute(str(q))
         orders = cursor.fetchall()
         result = [{k: v for k, v in zip(headers, row)} for row in orders]
+        print(type(result))
         cursor.close()
         return json.dumps(result)
 
@@ -319,11 +322,10 @@ class SubOrdersTable(DBConnection):
         q = Query.from_(cls.table).select(cls.table.star,
                                           Case().when(cls.table.status_code == "Завершено", True)\
                                           .else_(False))\
-            .where(cls.table.deleted == False and
-                   cls.table.ID_ORDERS == id_orders)
+            .where((cls.table.deleted == False) & (cls.table.ID_ORDERS == id_orders))
         cursor.execute(str(q))
         suborders = cursor.fetchall()
-        result = [{k: v for k,v in zip(headers, row)} for row in suborders]
+        result = [{k: v for k, v in zip(headers, row)} for row in suborders]
         cursor.close()
         return json.dumps(result)
     
@@ -368,6 +370,7 @@ class SubOrdersTable(DBConnection):
             )
         cursor.execute(str(q))
         cursor.close()
+        SubOrdersTable().check_open_close_suborder(row['id_orders'])
         print(f"Поручение добавлено")
 
     @classmethod
@@ -382,29 +385,32 @@ class SubOrdersTable(DBConnection):
         for key in data:
             q = q.set(key, data[key])
         cursor.execute(str(q))
+        SubOrdersTable().check_open_close_suborder(data['id_orders'])
         #Проверка: если все подзадачи закрыты, то оснавная задача также автоматически закрывается
         #Проставляется в status_code значение 'Завершено'
-        id_orders_query = Query.from_(cls.table).select(cls.table.status_code)\
-            .where(cls.table.id_orders == data['id_orders'])
-        cursor.execute(str(id_orders_query))
-        if all(
-            [True if row[0] == 'Завершено' else False for row in cursor.fetchall()]
-        ):
-            OrdersTable.update_order(json.dumps({
-                'status_code': 'Завершено',
-                'id': data['id_orders']
-            }))
+        # id_orders_query = Query.from_(cls.table).select(cls.table.status_code)\
+        #     .where(cls.table.id_orders == data['id_orders'])
+        # cursor.execute(str(id_orders_query))
+        # if all(
+        #     [True if row[0] == 'Завершено' else False for row in cursor.fetchall()]
+        # ):
+        #     OrdersTable.update_order(json.dumps({
+        #         'status_code': 'Завершено',
+        #         'id': data['id_orders']
+        #
+        #     }))
         cursor.close()
         print(f'Успешно обновленны данные id:{data["id"]}')
 
     @classmethod
     @DBConnection().cursor_add
-    def delete_suborder_row(cls, cursor, id: bytes) -> None:
-        id = id.decode('utf-8')
-        q = Query.update(cls.table).where(cls.table.id == id)\
+    def delete_suborder_row(cls, cursor, order_id, suborder_id) -> None:
+        #id = id.decode('utf-8')
+        q = Query.update(cls.table).where(cls.table.id == suborder_id)\
             .set('deleted', True)
         cursor.execute(str(q))
         cursor.close()
+        SubOrdersTable().check_open_close_suborder(order_id)
         print(f'Строка с id {id} "удалена" из suborders.')
 
     @classmethod
@@ -415,9 +421,30 @@ class SubOrdersTable(DBConnection):
             .where(cls.table.deleted == True)
         cursor.execute(str(q))
         orders = cursor.fetchall()
-        result = [{k: v for k,v in zip(headers, row)} for row in orders]
+        result = [{k: v for k, v in zip(headers, row)} for row in orders]
         cursor.close()
         return json.dumps(result)
+
+    @classmethod
+    @DBConnection().cursor_add
+    def check_open_close_suborder(cls, cursor, order_id):
+
+        id_orders_query = Query.from_(cls.table).select(cls.table.status_code)\
+            .where((cls.table.id_orders == order_id) & (cls.table.deleted == False))
+        cursor.execute(str(id_orders_query))
+
+        #x = cursor.fetchall()
+
+        if all([True if row[0] == 'Завершено' else False for row in cursor.fetchall()]):
+            OrdersTable.update_order(json.dumps({
+                'status_code': 'Завершено',
+                'id': order_id
+            }))
+        else:
+            OrdersTable.update_order(json.dumps({
+                'status_code': 'На исполнении',
+                'id': order_id
+            }))
 
 
 class Dumper:
@@ -438,6 +465,10 @@ class Dumper:
 
 #Не использовать, до конца не реализован.
 class ReportDatabaseWriter(OrdersTable):
+
+    table = Table("ORDERS")
+    table_sub_orders = Table("SUBORDERS")
+
     """
     Запись из Excel в базу
     """
@@ -468,4 +499,35 @@ class ReportDatabaseWriter(OrdersTable):
         rows = self._handle_excel_report()
         for row in rows:
             super().add_order(row)
-        
+
+    """
+    Возвращает информацию для формирования карточки для закрытия поручения. 
+    """
+    @classmethod
+    @DBConnection().cursor_add
+    def get_info(cls, cursor, uuid_suboder):
+        headers = ["issue_type", "issue_idx", "approving_date", "title", "initiator", "approving_employee",
+                   "deadline", "comment", "employee", "deadline_suborder", "status_code", "content", "comment_suborder"]
+        q = Query\
+            .from_(cls.table_sub_orders)\
+            .join(cls.table)\
+            .on(cls.table_sub_orders.id_orders == cls.table.id)\
+            .select(cls.table.issue_type,
+                    cls.table.issue_idx,
+                    cls.table.approving_date,
+                    cls.table.title,
+                    cls.table.initiator,
+                    cls.table.approving_employee,
+                    cls.table.deadline,
+                    cls.table.comment,
+                    cls.table_sub_orders.employee,
+                    cls.table_sub_orders.deadline,
+                    cls.table_sub_orders.status_code,
+                    cls.table_sub_orders.content,
+                    cls.table_sub_orders.comment)\
+            .where(cls.table_sub_orders.id == uuid_suboder)
+        cursor.execute(str(q))
+        orders = cursor.fetchall()
+        result = [{k: v for k, v in zip(headers, row)} for row in orders]
+        cursor.close()
+        return result

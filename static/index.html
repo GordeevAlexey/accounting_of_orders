@@ -111,6 +111,7 @@
                 top:0;
             }
         </style>
+
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/js/tabulator.min.js"></script>
 <script type="text/javascript" src="http://192.168.200.168:8004/sandbox/static/tabulator.js"></script>
@@ -124,73 +125,96 @@
     <input type="button" value="Добавить документ" onclick="showModalWin('add_order')">
 <!--    <input type="button" value="Удалить документ" onclick="showModalWin()">-->
 </div>
+
 <div id="orders"></div>
 <div id="suborders_manual" hidden>
     <h1>Реестр поручений</h1>
     <input id="add_task" type="button" value="Добавить поручение" onclick="showModalWin('add_suborder')">
     <input id="close_task" type="button" value="Закрыть поручение" onclick="showModalWin('close_suborder')" hidden>
     <br>
-    <input id="update_suborder_btn" type="button" value="Редактировать поручение" onclick="showModalWin()" hidden>
-    <input id="delete_suborder_btn" type="button" value="Удалить поручение" onclick="showModalWin()" hidden>
+    <input id="update_suborder_btn" type="button" value="Редактировать поручение" onclick="showModalWin('update_suborder')" hidden>
+    <input id="delete_suborder_btn" type="button" value="Удалить поручение" onclick="deleteSuborder()" hidden>
 
 </div>
-<div id="suborders"></div>
 
+<div id="suborders"></div>
 <div style="text-align: center" id="add_order" class="modalwin">
     <form action="/add_order" method="post">
         <select class="js-example-basic-multiple" name="issue_type" id="issue_type">
             <option value="Приказ" selected>Приказ</option>
         </select>
         <input name="issue_idx" type="text" placeholder="Номер №">
-        <input name="approving_date" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="Дата утверждения">
+        <input name="approving_date" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Дата утверждения">
         <input name="title" type="text" placeholder="Тема">
 
         <select class="initiator" name="initiator" id="initiator" multiple="multiple"></select>
         <br><br>
         <select class="approving_employee" name="approving_employee" id="approving_employee" multiple="multiple"></select>
 
-        <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="Срок исполнения">
+        <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Срок исполнения">
         <input name="comment" type="text" placeholder="Примечание">
-        <input name="reference" type="text" placeholder="Ссылка">
+        <input name="reference" type="url" placeholder="Ссылка">
 
         <input type="submit" name="submit" value="Сохранить">
     </form>
 </div>
 
 <div style="text-align: center" id="add_suborder" class="modalwin">
-    <form action="/add_suborder" method="post">
-        <select class="employee" name="employee" id="employee" multiple="multiple"></select>
-        <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.type='text')" placeholder="Исполнить до...">
+    <form id="add_suborder_form" action="" method="post" onsubmit="return addActionForm('add_suborder_form', 'add_suborder');">
+        <select name="employee" id="employee" multiple="multiple"></select>
+        <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Исполнить до...">
         <textarea name="content" type="text" placeholder="Описание поручения"></textarea>
         <input type="submit" name="submit" value="Сохранить">
-        <input name="current_order_id1" id="current_order_id1" type="text" hidden>
+<!--        <input name="current_order_id1" id="current_order_id1" type="text" hidden>-->
     </form>
 </div>
 
 <div style="text-align: center" id="close_suborder" class="modalwin">
-    <form action="/close_suborder" method="post">
+    <form action="" id="close_suborder_form" method="post" onsubmit="return addActionForm('close_suborder_form', 'close_suborder');">
         <textarea name="comment" type="text" placeholder="Комментарии"></textarea>
         <input type="submit" name="submit" value="Закрыть">
-        <input name="current_order_id" id="current_order_id" type="text" hidden>
-        <input name="current_suborder_id" id="current_suborder_id" type="text" hidden>
     </form>
 </div>
 
-<script>
-$(document).ready(function() {
+<div style="text-align: center" id="update_suborder" class="modalwin">
+    <form id="update_suborder_form" action="" method="post" onsubmit="return addActionForm('update_suborder_form', 'update_suborder');">
+        <select name="employee_up" id="employee_up" multiple="multiple"></select>
+        <input name="deadline_up" id="deadline_up" type="date">
+        <textarea name="content_up" id="content_up" type="text" placeholder="Описание поручения"></textarea>
+        <input name="submit_up" id="submit_up" type="submit" value="Обновить">
+    </form>
+</div>
 
-    $('.initiator').select2({
+<input name="current_order_id" id="current_order_id" type="text" hidden>
+<input name="current_suborder_id" id="current_suborder_id" type="text" hidden>
+
+<button id="select-row">Селект уан</button>
+
+<script>
+
+document.getElementById("select-row").addEventListener("click", function(){
+    alert(orders)
+    orders.selectRow(2);
+})
+
+$(document).ready(function() {
+    $('#initiator').select2({
         placeholder: "Выбирите инициатора"});
 
-    $('.approving_employee').select2({
+    $('#approving_employee').select2({
         placeholder: "Выбирите утверждающего руководителя"});
 
-    $('.employee').select2({
+    $('#employee').select2({
+        placeholder: "Выбирите исполнителя"});
+
+    $('#employee_up').select2({
         placeholder: "Выбирите исполнителя"});
 
     var url = 'http://192.168.200.168:8004/get_order';
 
     $.get(url, function(response) {
+
+        alert(response);
 
         var orders = new Tabulator('#orders', {
         selectable: 1,
@@ -201,7 +225,7 @@ $(document).ready(function() {
         columns: [
                     { title: 'Вид поручения', field: 'issue_type' },
                     { title: 'Номер №', field: 'issue_idx' },
-                    { title: 'Дата утверждения', field: 'approving_date' },
+                    { title: 'Дата утверждения', field: 'approving_date'},
                     { title: 'Тема', field: 'title' },
                     { title: 'Инициатор', field: 'initiator' },
                     { title: 'Утверждающий руководитель', field: 'approving_employee' },
@@ -209,20 +233,22 @@ $(document).ready(function() {
                     { title: 'Прогресс', field: 'progress', sorter: 'number', formatter: 'progress', editorParams:{min:1, max:100}},
                     { title: 'Срок исполнения', field: 'deadline' },
                     { title: 'Примечание', field: 'comment' },
-                    { title: 'Ссылка', field: 'reference' }
+                    { title: 'Ссылка', field: 'reference', formatter:"link" }
                  ],
 
         rowClick:function(e, row){
 
-                 $("#current_suborder_id").val("")
-                 $("#close_task").hide(300)
-                 $("#delete_suborder_btn").hide(300)
-                 $("#update_suborder_btn").hide(300)
+            $("#current_suborder_id").val("")
+            $("#close_task").hide(300)
+            $("#delete_suborder_btn").hide(300)
+            $("#update_suborder_btn").hide(300)
 
             if (row.getData().status_code == 'На исполнении' || row.getData().status_code == 'Завершено') {
 
                 var url = `http://192.168.200.168:8004/get_suborder/${row.getData().id}`;
+
                     $.get(url, function(response) {
+
                     var suborders = new Tabulator('#suborders', {
                     selectable: 1,
                     pagination: 'local',
@@ -239,33 +265,46 @@ $(document).ready(function() {
                              ],
 
                     rowClick:function(e, row){
+
+                        fillingUpdatingFields(row)
+
                         if (row.getData().status_code == 'На исполнении') {
                             visible_element_suborder(row)
                         } else {
                             hide_element_suborder()
                         }
                     }
-
                     })
 
                 })
                 $("#suborders").show(300)
                 $("#current_order_id").val(row.getData().id)
-                $("#current_order_id1").val(row.getData().id)
                 $("#suborders_manual").show(300)
 
             } else {
               $("#suborders").hide(300)
               $("#current_order_id").val("")
-              $("#current_order_id1").val("")
               $("#suborders_manual").hide(300)
 
             }
         }
-
         });
     });
 });
+
+function fillingUpdatingFields(row) {
+
+    var string = row.getData().employee;
+    var array = string.split(", ");
+    $('#employee_up').val(array).change();
+
+
+    let myDate = row.getData().deadline;
+    let str = myDate.replace(/(\d+)\.(\d+)\.(\d+)/, '$3-$2-$1');
+    $("#deadline_up").val(str).change();
+
+    $("#content_up").val(row.getData().content);
+}
 
 function visible_element_suborder(row) {
     $("#current_suborder_id").val(row.getData().id)
@@ -281,6 +320,30 @@ function hide_element_suborder() {
     $("#update_suborder_btn").hide(300)
 }
 
+function addActionForm() {
+    var order_id = escape(document.getElementById('current_order_id').value);
+    var suborder_id = escape(document.getElementById('current_suborder_id').value);
+
+    if (arguments[1] == 'add_suborder' || arguments[1] == 'add_suborder'){
+        document.getElementById(arguments[0]).action = '/' + arguments[1] + '/' + order_id
+    } else {
+        document.getElementById(arguments[0]).action = '/' + arguments[1] + '/' + order_id + '/' + suborder_id
+    }
+}
+
+function deleteSuborder() {
+    var isDelete = confirm("Подвердите удаление поручения.");
+
+    if (isDelete == true) {
+        $.post("http://192.168.200.168:8004/delete_suborder/" +
+        document.getElementById('current_order_id').value +"/"+
+        document.getElementById('current_suborder_id').value, function(response){
+                alert(document.getElementById('orders'));
+            })
+        }
+
+}
+
 </script>
 
 <script>
@@ -288,28 +351,27 @@ function hide_element_suborder() {
         var darkLayer = document.createElement('div'); // слой затемнения
         darkLayer.id = 'shadow'; // id чтобы подхватить стиль
         document.body.appendChild(darkLayer); // включаем затемнение
-
         var modalWin = document.getElementById(arguments[0]); // находим наше "окно"
         modalWin.style.display = 'block'; // "включаем" его
-
         darkLayer.onclick = function () {  // при клике на слой затемнения все исчезнет
         darkLayer.parentNode.removeChild(darkLayer); // удаляем затемнение
         modalWin.style.display = 'none'; // делаем окно невидимым
             return false;
             };
         }
+
+
 </script>
 
 <script>
 
     var users = $.get( "http://192.168.200.168:8004/get_users", function(response) {
-
-    $.each(response, function(key, value) {
-        $('#approving_employee, #initiator, #employee')
-        .append($("<option></option>")
-                    .attr("value", key)
-                    .text(value));
-    });
+        $.each(response, function(key, value) {
+            $('#approving_employee, #initiator, #employee, #employee_up')
+            .append($("<option></option>")
+                        .attr("value", key)
+                        .text(value));
+        });
     });
 </script>
 

@@ -1,6 +1,6 @@
 import json
-
-from database.db import DBConnection, OrdersTable, SubOrdersTable
+from datetime import datetime
+from database.db import OrdersTable, SubOrdersTable, ReportDatabaseWriter
 from database.ibso import Employees
 from datetime import datetime
 
@@ -28,25 +28,26 @@ templates = Jinja2Templates(directory="static", autoescape=False, auto_reload=Tr
 
 
 @app.post("/add_order")
-async def add_order(request: Request,
-                   issue_type: str = Form(),
-                   issue_idx: str = Form(),
-                   approving_date: str = Form(),
-                   title: str = Form(),
-                   initiator: list = Form(),
-                   approving_employee: list = Form(),
-                   deadline: str = Form(),
-                   comment: str = Form(),
-                   reference: str = Form()):
+async def add_order(issue_idx: str = Form(),
+                    issue_type: str = Form(),
+                    approving_date: str = Form(),
+                    title: str = Form(),
+                    initiator: list = Form(),
+                    approving_employee: list = Form(),
+                    deadline: str = Form(),
+                    comment: str = Form(),
+                    reference: str = Form()):
+
+    print(datetime.strptime(approving_date, '%Y-%m-%d').strftime('%d.%m.%Y'))
 
     js = json.dumps({
         "issue_type": issue_type,
         "issue_idx": issue_idx,
-        "approving_date": approving_date,
+        "approving_date": datetime.strptime(approving_date, '%Y-%m-%d').strftime("%d.%m.%Y"),
         "title": title,
         "initiator": str(', '.join(initiator)),
         "approving_employee": str(', '.join(approving_employee)),
-        "deadline": deadline,
+        "deadline": datetime.strptime(deadline, '%Y-%m-%d').strftime("%d.%m.%Y"),
         "comment": comment,
         "reference": reference,
         "status_code": 'На исполнении'
@@ -57,17 +58,16 @@ async def add_order(request: Request,
     return RedirectResponse("/", status_code=303)
 
 
-@app.post("/add_suborder")
-async def add_suborder(request: Request,
-                   current_order_id1: str = Form(),
-                   employee: list = Form(),
-                   deadline: str = Form(),
-                   content: str = Form()):
+@app.post("/add_suborder/{current_order_id}")
+async def add_suborder(current_order_id: str,
+                       employee: list = Form(),
+                       deadline: str = Form(),
+                       content: str = Form()):
 
     js = json.dumps({
-        "id_orders": current_order_id1,
+        "id_orders": current_order_id,
         "employee": str(', '.join(employee)),
-        "deadline": deadline,
+        "deadline": datetime.strptime(deadline, '%Y-%m-%d').strftime("%d.%m.%Y"),
         "content": content,
         "status_code": 'На исполнении'
         })
@@ -80,11 +80,30 @@ async def add_suborder(request: Request,
     return RedirectResponse("/", status_code=303)
 
 
-@app.post("/close_suborder")
-async def update(request: Request,
-                current_order_id: str = Body(),
-                current_suborder_id: str = Body(),
-                comment: str = Form()):
+@app.post("/update_suborder/{current_order_id}/{current_suborder_id}")
+async def update_suborder(current_order_id: str,
+                          current_suborder_id: str,
+                          employee_up: list = Form(),
+                          deadline_up: str = Form(),
+                          content_up: str = Form()
+                          ):
+    js = json.dumps({
+        "id_orders": current_order_id,
+        "id": current_suborder_id,
+        "employee": str(', '.join(employee_up)),
+        "deadline": datetime.strptime(deadline_up, '%Y-%m-%d').strftime("%d.%m.%Y"),
+        "content": content_up
+    })
+
+    SubOrdersTable.update_suborder(js)
+
+    return RedirectResponse("/", status_code=303)
+
+
+@app.post("/close_suborder/{current_order_id}/{current_suborder_id}")
+async def close_suborder(current_order_id: str,
+                         current_suborder_id: str,
+                         comment: str = Form()):
 
     js = json.dumps({
         "id_orders": current_order_id,
@@ -98,20 +117,17 @@ async def update(request: Request,
     return RedirectResponse("/", status_code=303)
 
 
-# @app.get("/get_order_report", response_description='xlsx')
-# async def get_task_order_report():
-#     #Скачивает отчет
-#     r = Report()
-#     r.get_report()
-#     headers = {
-#         'Content-Disposition': 'attachment; filename="report.xlsx"'
-#     }
-#     return StreamingResponse(r.output, headers=headers)
+@app.post("/delete_suborder/{current_order_id}/{current_suborder_id}")
+async def delete_suborder(current_order_id: str,
+                          current_suborder_id: str):
+    SubOrdersTable.delete_suborder_row(current_order_id, current_suborder_id)
+    return RedirectResponse("/", status_code=303)
 
 
 @app.get("/get_order")
 async def get_order():
-    print(OrdersTable().get_orders_table_pg_bar())
+    x = OrdersTable().get_orders_table_pg_bar()
+    print(x)
     return OrdersTable().get_orders_table_pg_bar()
 
 
@@ -120,9 +136,17 @@ async def get_suborder(order_id: str):
     return SubOrdersTable().get_suborders_table(order_id)
 
 
-@app.get("/open_form")
-async def add_task(request: Request):
-    return templates.TemplateResponse('taskform.html', {'request': request})
+@app.get("/close_suborder/{suborder_id}")
+async def close_suborder(suborder_id: str, request: Request):
+    return templates.TemplateResponse('close_suborder.html',
+                                      {'request': request, 'suborder_id': suborder_id})
+
+
+@app.get("/get_info_for_close_suborder/{suborder_id}")
+async def get_info_for_close_suborder(suborder_id: str):
+    l = "'" + str(ReportDatabaseWriter.get_info(suborder_id)[0]) + "'"
+    print(l)
+    return l
 
 
 @app.get("/")
@@ -134,6 +158,15 @@ async def start(request: Request):
 async def get_users():
     return json.loads(Employees().get_phone_book_for_selected())
 
+# @app.get("/get_order_report", response_description='xlsx')
+# async def get_task_order_report():
+#     #Скачивает отчет
+#     r = Report()
+#     r.get_report()
+#     headers = {
+#         'Content-Disposition': 'attachment; filename="report.xlsx"'
+#     }
+#     return StreamingResponse(r.output, headers=headers)
 
 if __name__ == "__main__":
     uvicorn.run("main:app",
