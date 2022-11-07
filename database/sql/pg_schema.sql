@@ -41,3 +41,8 @@ CREATE TABLE IF NOT EXISTS HISTORY(
     change_date date NOT NULL default CURRENT_DATE,
     data jsonb not null
 );
+
+CREATE TABLE IF NOT EXISTS USERS(
+    user_name TEXT unique not null,
+    email text not null
+);

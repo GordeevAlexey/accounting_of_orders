@@ -9,6 +9,9 @@ from typing import Dict, Any
 
 #Алиас для json
 JsonDict = Dict[str, Any]
+JsonList = [Any]
+
+
 load_dotenv()
 
 class BaseDB:
@@ -29,7 +32,7 @@ class BaseDB:
         self.conn.autocommit = True
 
     def create_tables(self):
-        with open('/Users/nikitasidorovic/Documents/Accept/Projects/accounting_of_orders/database/sql/schema.sql', 'r', encoding='utf-8') as query:
+        with open('database/sql/pg_schema.sql', 'r', encoding='utf-8') as query:
             tables_creation_request = query.read()
             with self.conn:
                 with self.conn.cursor() as cursor:
@@ -115,6 +118,19 @@ class OrdersTable(BaseDB):
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
         self.conn.close()
         print(result)
+        return json.dumps(result, default=str)
+
+    def get_orders_table(self) -> JsonDict:
+        """Полная выгрузка"""
+        headers = OrdersTable()._get_orders_header()
+        q = Query.from_(self.table).select(self.table.star)\
+            .where(self.table.deleted == False)
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+                orders = cursor.fetchall()
+                result = [{k: v for k, v in zip(headers, row)} for row in orders]
+        self.conn.close()
         return json.dumps(result, default=str)
 
     def _get_deleted_orders_rows(self) -> JsonDict:
@@ -307,8 +323,86 @@ class SubOrdersTable(BaseDB):
         print(f'Строка с id {suborder_id} "удалена" из suborders.')
 
 
+class Users(BaseDB):
+
+    table = Table('users')
+
+    def __init__(self):
+        super().__init__()
+
+    @staticmethod
+    def get_phone_book() -> dict:
+        """
+        Тянет данные с портала
+        """
+        # phonebook = {}
+        phonebook = []
+        r = requests.get('http://portal/phonebook')
+        soup = bs(r.text, "html.parser")
+        main_table = soup.find_all('tr', class_='usTblContent')
+        for table in main_table:
+            table = tuple(map(lambda x: x.text.replace('\n', ''), table))
+            if table[9]:
+                phonebook.append({
+                    "user_name": table[3],
+                    # 'position': table[5],
+                    'email': table[9],
+                    # 'phone': table[11] or '-',
+                })
+            else:
+                continue
+        return phonebook
+
+    def add_user(self, user: bytes) -> None:
+        user = json.loads(user)
+        _columns = user.keys()
+        q = Query.into(self.table).columns(*_columns).insert(*user.values())
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                try:
+                    cursor.execute(str(q))
+                except psycopg2.errors.UniqueViolation as e:
+                    print(f'Пользватель {user["user_name"]} уже имеется в базе.')
+        self.conn.close()
+
+    def get_users(self) -> JsonList:
+        q = Query.from_(self.table).select(self.table.user_name)
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+                result = [user_name[0] for user_name in cursor.fetchall()]
+        self.conn.close()
+        return json.dumps(result)
+
+    def get_user_mails(self) -> JsonDict:
+        q = Query.from_(self.table).select(self.table.star)
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+                result = [{user_name: email} for user_name, email in cursor.fetchall()]
+        self.conn.close()
+        return json.dumps(result)
+
+    def update_users_table(self):
+        phonebook = Users.get_phone_book()
+        for row in phonebook:
+            _columns = row.keys()
+            q = Query.into(self.table).columns(*_columns).insert(*row.values())
+            with self.conn:
+                with self.conn.cursor() as cursor:
+                    try:
+                        cursor.execute(str(q))
+                    except psycopg2.errors.UniqueViolation as e:
+                        print(f'Пользватель {row["user_name"]} уже имеется в базе.')
+        self.conn.close()
+
+        print(f"Таблица пользователей обновлена")
+
+
 if __name__ == "__main__":
     # BaseDB().create_tables()
+    # Users().update_users_table()
+    print(Users().get_user_mails())
     add_order_row = json.dumps({
         'issue_type': 'Приказ',
         'issue_idx': '586',
