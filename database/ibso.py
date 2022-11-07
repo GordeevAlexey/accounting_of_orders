@@ -40,8 +40,8 @@ class IBSO(ABC):
 class Employees(IBSO):
     sql_file = 'database/sql/ibso_employees.sql'
 
-    def __init__(self) -> None:
-        super().__init__()
+    # def __init__(self) -> None:
+    #     super().__init__()
 
     def _get_query(self) -> str:
         return super()._get_query(self.sql_file)

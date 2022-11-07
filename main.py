@@ -114,7 +114,7 @@ async def close_suborder(current_order_id: str,
      #   "comment": comment_suborder
     })
 
-    SubOrdersTable.update_suborder(js)
+    SubOrdersTable().update_suborder(js)
 
     return RedirectResponse("/", status_code=303)
 
@@ -154,7 +154,9 @@ async def start(request: Request):
 
 @app.get("/get_users")
 async def get_users():
-    return json.loads(Employees().get_phone_book_for_selected())
+    x = json.loads(Employees().get_phone_book_for_selected())
+    print(x)
+    return x
 
 # @app.get("/get_order_report", response_description='xlsx')
 # async def get_task_order_report():

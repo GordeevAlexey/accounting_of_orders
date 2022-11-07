@@ -9,8 +9,6 @@ from typing import Dict, Any
 
 #Алиас для json
 JsonDict = Dict[str, Any]
-
-
 load_dotenv()
 
 class BaseDB:
@@ -59,6 +57,34 @@ class OrdersTable(BaseDB):
     def __init__(self) -> None:
         super().__init__()
 
+    def _get_orders_header(self):
+        """
+        В озвращает все имена столбцов таблицы ORDERS
+        """
+        try:
+            with self.conn:
+                with self.conn.cursor() as cursor:
+                    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'orders' ORDER BY ordinal_position;")
+                    headers = [row[0] for row in cursor.fetchall()]
+            return headers
+        except:
+            return None
+        finally:
+            cursor.close()
+
+    def get_orders_table(self) -> JsonDict:
+        """Полная выгрузка"""
+        headers = OrdersTable()._get_orders_header()
+        q = Query.from_(self.table).select(self.table.star)\
+            .where(self.table.deleted == False)
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+                orders = cursor.fetchall()
+                result = [{k: v for k, v in zip(headers, row)} for row in orders]
+        self.conn.close()
+        return json.dumps(result, default=str)
+
     def get_orders_table_pg_bar(self) -> json:
         """
          Полная выгрузка плюс инфа для прогресс бара
@@ -89,19 +115,6 @@ class OrdersTable(BaseDB):
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
         self.conn.close()
         print(result)
-        return json.dumps(result, default=str)
-
-    def get_orders_table(self) -> JsonDict:
-        """Полная выгрузка"""
-        headers = OrdersTable()._get_orders_header()
-        q = Query.from_(self.table).select(self.table.star)\
-            .where(self.table.deleted == False)
-        with self.conn:
-            with self.conn.cursor() as cursor:
-                cursor.execute(str(q))
-                orders = cursor.fetchall()
-                result = [{k: v for k, v in zip(headers, row)} for row in orders]
-        self.conn.close()
         return json.dumps(result, default=str)
 
     def _get_deleted_orders_rows(self) -> JsonDict:
@@ -140,6 +153,19 @@ class OrdersTable(BaseDB):
                 result = [{k: v for k,v in zip(headers, row)} for row in orders]
         cursor.close()
         return json.dumps(result)
+
+    def add_order(self, row: JsonDict) -> None:
+        table = Table("orders")
+        row = json.loads(row)
+        row['approving_date'] = datetime.strptime(row['approving_date'], "%d.%m.%Y").date()
+        row['deadline'] = datetime.strptime(row['deadline'], "%d.%m.%Y").date()
+        _columns = row.keys()
+        q = Query.into(table).columns(*_columns).insert(*row.values())
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+        self.conn.close()
+        print(f"Поручение добавлено")
 
     def delete_order_row(self, id: bytes) -> None:
         """
@@ -181,40 +207,43 @@ class OrdersTable(BaseDB):
         self.conn.close()
         print(f'Успешно обновленны данные id:{data["id"]}')
 
-    def _get_orders_header(self):
-        """
-        В озвращает все имена столбцов таблицы ORDERS
-        """
-        try:
-            with self.conn:
-                with self.conn.cursor() as cursor:
-                    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'orders' ORDER BY ordinal_position;")
-                    headers = [row[0] for row in cursor.fetchall()]
-            return headers
-        except:
-            return None
-        finally:
-            cursor.close()
-
-    def add_order(self, row: JsonDict) -> None:
-        table = Table("orders")
-        row = json.loads(row)
-        row['approving_date'] = datetime.strptime(row['approving_date'], "%d.%m.%Y").date()
-        row['deadline'] = datetime.strptime(row['deadline'], "%d.%m.%Y").date()
-        _columns = row.keys()
-        q = Query.into(table).columns(*_columns).insert(*row.values())
-        with self.conn:
-            with self.conn.cursor() as cursor:
-                cursor.execute(str(q))
-        self.conn.close()
-        print(f"Поручение добавлено")
-
 
 class SubOrdersTable(BaseDB):
     """
     Работа с подзадачами в поручении/приказе
     """
     table = Table('suborders')
+
+    def _get_suborders_header(self):
+        #Возвращает все имена столбцов таблицы SUBORDERS
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                try:
+                    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'suborders' ORDER BY ordinal_position;")
+                    headers = [row[0] for row in cursor.fetchall()]
+                    return headers
+                except:
+                    return None
+                finally:
+                    cursor.close()
+
+    def get_suborders_table(self, id_orders: bytes) -> json:
+        # Выгрзука подзадач по отдельному приказу или поручению
+        # id_orders = id_orders.decode('utf-8')
+        headers = SubOrdersTable()._get_suborders_header()
+        headers.append('condition')
+        q = Query.from_(self.table).select(self.table.star,
+                                          Case().when(self.table.status_code == "Завершено", True)\
+                                          .else_(False))\
+            .where((self.table.deleted == False) & (self.table.id_orders == id_orders))
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+                suborders = cursor.fetchall()
+                result = [{k: v for k, v in zip(headers, row)} for row in suborders]
+                cursor.close()
+
+        return json.dumps(result, default=str)
 
     def _check_open_close_suborder(self, order_id: str):
         """
