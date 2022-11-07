@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
-from database.db import OrdersTable, SubOrdersTable, ReportDatabaseWriter
+#from database.db import OrdersTable, SubOrdersTable, ReportDatabaseWriter
+from database.pg_db import OrdersTable, SubOrdersTable
 from database.ibso import Employees
 from datetime import datetime
 
@@ -10,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 from starlette.templating import Jinja2Templates
+
 from send_email import Email
 from email.mime.text import MIMEText
 #from reports import Report
@@ -53,8 +55,8 @@ async def add_order(issue_idx: str = Form(),
         "status_code": 'На исполнении'
         })
 
-    OrdersTable.add_order(js)
-
+    #OrdersTable.add_order(js)
+    OrdersTable().add_order(js)
     return RedirectResponse("/", status_code=303)
 
 
@@ -72,7 +74,7 @@ async def add_suborder(current_order_id: str,
         "status_code": 'На исполнении'
         })
 
-    SubOrdersTable.add_suborder(js)
+    SubOrdersTable().add_suborder(js)
     for user in employee:
         print(user)
     #Email.send()
@@ -95,7 +97,7 @@ async def update_suborder(current_order_id: str,
         "content": content_up
     })
 
-    SubOrdersTable.update_suborder(js)
+    SubOrdersTable().update_suborder(js)
 
     return RedirectResponse("/", status_code=303)
 

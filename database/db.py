@@ -76,6 +76,7 @@ class OrdersTable(DBConnection):
 
     table = Table("ORDERS")
     table_sub_orders = Table("SUBORDERS")
+
     @classmethod
     @DBConnection().cursor_add
     def _get_orders_header(cls, cursor):
@@ -432,8 +433,6 @@ class SubOrdersTable(DBConnection):
         id_orders_query = Query.from_(cls.table).select(cls.table.status_code)\
             .where((cls.table.id_orders == order_id) & (cls.table.deleted == False))
         cursor.execute(str(id_orders_query))
-
-        #x = cursor.fetchall()
 
         if all([True if row[0] == 'Завершено' else False for row in cursor.fetchall()]):
             OrdersTable.update_order(json.dumps({
