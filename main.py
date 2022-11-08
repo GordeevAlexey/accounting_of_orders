@@ -16,6 +16,7 @@ from send_email import Email
 from email.mime.text import MIMEText
 #from reports import Report
 from fastapi.responses import StreamingResponse
+from database.utils import Action
 
 
 app = FastAPI()
@@ -47,8 +48,8 @@ async def add_order(issue_idx: str = Form(),
         "issue_idx": issue_idx,
         "approving_date": datetime.strptime(approving_date, '%Y-%m-%d').strftime("%d.%m.%Y"),
         "title": title,
-        "initiator": str(', '.join(initiator)),
-        "approving_employee": str(', '.join(approving_employee)),
+        "initiator": ', '.join(initiator),
+        "approving_employee": ', '.join(approving_employee),
         "deadline": datetime.strptime(deadline, '%Y-%m-%d').strftime("%d.%m.%Y"),
         "comment": comment,
         "reference": reference,
@@ -74,10 +75,9 @@ async def add_suborder(current_order_id: str,
         "status_code": 'На исполнении'
         })
 
-    SubOrdersTable().add_suborder(js)
-    for user in employee:
-        print(user)
-    #Email.send()
+    suborder_id = SubOrdersTable().add_suborder(js)
+    users = Users.select_users(employee)
+    Email(suborder_id, users, Action.add).send()
 
     return RedirectResponse("/", status_code=303)
 
@@ -175,7 +175,8 @@ async def get_users():
 
 if __name__ == "__main__":
     uvicorn.run("main:app",
-                host="192.168.200.168",
+                host="192.168.200.92",
+                # host="192.168.200.168",
                 # headers=[('server', 'top4ik')],
                 port=8004,
                 reload=True)

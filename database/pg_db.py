@@ -7,6 +7,7 @@ from datetime import datetime
 import json
 from typing import Dict, Any
 import requests
+from database.utils import User
 
 #Алиас для json
 JsonDict = Dict[str, Any]
@@ -301,16 +302,21 @@ class SubOrdersTable(BaseDB):
         self.conn.close()
         print(f'Успешно обновленны данные id:{data["id"]}')
 
-    def add_suborder(self, row: JsonDict) -> None:
+    def add_suborder(self, row: JsonDict) -> str:
+        """
+        Возвращает id подзадачи
+        """
         row = json.loads(row)
         _columns = row.keys()
         q = Query.into(self.table).columns(*_columns).insert(*row.values())
         with self.conn:
             with self.conn.cursor() as cursor:
-                cursor.execute(str(q))
+                cursor.execute(str(q) + "RETURNING id")
+                [suborder_id] = cursor.fetchone()
         self.conn.close()
         SubOrdersTable()._check_open_close_suborder(row['id_orders'])
         print(f"Поручение добавлено")
+        return suborder_id
 
     def delete_suborder_row(self, order_id: bytes, suborder_id: str) -> None:
         #? шляпа с хинтами
@@ -366,6 +372,19 @@ class Users(BaseDB):
                     print(f'Пользватель {user["user_name"]} уже имеется в базе.')
         self.conn.close()
 
+    def select_users(self, users: list[str]) -> list[User]:
+        """
+        Возвращает список именованный кортежей с именем пользователя и его почтой
+        """
+        q = Query.from_(self.table).select(self.table.star)\
+            .where(self.table.user_name.isin(list))
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+                users = [User(*user_data) for user_data in cursor.fetchall()]
+        self.conn.close()
+        return users
+
     def get_users(self) -> JsonList:
         q = Query.from_(self.table).select(self.table.user_name)
         with self.conn:
@@ -403,19 +422,20 @@ class Users(BaseDB):
 if __name__ == "__main__":
     # BaseDB().create_tables()
     # Users().update_users_table()
-    print(Users().get_users())
     add_order_row = json.dumps({
         'issue_type': 'Приказ',
-        'issue_idx': '586',
-        'approving_date': '19.07.2022',
-        'title': "Об актуализации плана  реализации проекта  по использованию биометрической идентификации при обслуживании физических лиц",
-        'initiator': 'Сергунина Е.В.',
-        'approving_employee':'Терехина Е.С.',
-        'deadline': '28.08.2022',
+        'issue_idx': '666',
+        'approving_date': '19.10.2022',
+        'title': "ТЕСТ1",
+        'initiator': 'Сидорович Никита Сергеевич',
+        'approving_employee':'Сидорович Никита Сергеевич',
+        'deadline': '11.11.2022',
         'status_code': 'В работе',
-        'comment': 'Приказ разбит на несколько задач',
+        'comment': 'какой-то коммент',
         'reference': r'C:\Users\sidorovich_ns\Desktop\Projects\accounting_of_orders\income\Приказ_продажа монет кассовым работником.doc',
     })
+    # OrdersTable().add_order(add_order_row)
+
     update_order_row = json.dumps({
         'id': '73c823aa-0310-40ae-bd2f-af3010498f44',
         'title': "Об актуализации плана  реализации проекта  по использованию биометрической идентификации при обслуживании физических лиц",
@@ -430,13 +450,16 @@ if __name__ == "__main__":
     # print(OrdersTable()._get_deleted_orders_rows())
 
     add_suborder_row = json.dumps({
-        'id_orders': id_order.decode('utf-8'),
-        'employee': "Иванов И.И.",
-        'deadline': '10.09.2022',
-        'content': '8.Внести дополнение в Приложение к Учетной политике Банка «Положение о порядке ведения бухгалтерского учета операций с памятными и инвестиционными монетами», утвержденное Приказом № 1365/1 от 14.12.2016.',
+        'id_orders': "f1d367bc-176f-49bb-8a59-4f70a3133021",
+        'employee': "Сидорович Никита Сергеевич.",
+        'deadline': '12.11.2022',
+        'content': 'Что-то еще',
         'status_code': 'В работе',
         'comment': 'Новая подзадача',
     })
+
+    SubOrdersTable().add_suborder(add_suborder_row)
+
     update_suborder_row = json.dumps({
         'id_orders': '41510fef-e109-4b54-93aa-db8b3bdeba3e',
         'id': '74e9fe3f-2ef5-4c35-9310-17cea65ad0dd',
@@ -447,5 +470,4 @@ if __name__ == "__main__":
     suborder_id = '85657f88-07c4-49e5-a450-eaf6bb6d1d6b'
 
     # SubOrdersTable().delete_suborder_row(id_order.decode('utf-8'), suborder_id)
-    # SubOrdersTable().add_suborder(add_suborder_row)
     # SubOrdersTable().update_suborder(update_suborder_row)

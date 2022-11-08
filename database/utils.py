@@ -1,9 +1,19 @@
 from uuid import uuid4
 from dataclasses import dataclass, asdict
 from datetime import datetime
-from reminder import Reminder
 from schedule import every, run_pending, repeat
-import sqlite3
+from typing import NamedTuple
+from enum import Enum
+
+
+class User(NamedTuple):
+    name: str
+    email: str
+
+class Action(str, Enum):
+    ADD = "add"
+    UPDATE = "update"
+    DELETE = "delete"
     
 
 @dataclass(frozen=True, slots=True)
