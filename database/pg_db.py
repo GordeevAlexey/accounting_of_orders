@@ -1,4 +1,4 @@
-from tkinter import W
+from bs4 import BeautifulSoup as bs
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -6,6 +6,7 @@ from pypika import Query, Table, Case, functions as fn
 from datetime import datetime
 import json
 from typing import Dict, Any
+import requests
 
 #Алиас для json
 JsonDict = Dict[str, Any]
@@ -402,7 +403,7 @@ class Users(BaseDB):
 if __name__ == "__main__":
     # BaseDB().create_tables()
     # Users().update_users_table()
-    print(Users().get_user_mails())
+    print(Users().get_users())
     add_order_row = json.dumps({
         'issue_type': 'Приказ',
         'issue_idx': '586',

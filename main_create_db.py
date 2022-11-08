@@ -14,7 +14,7 @@ from database.ibso import Employees
 #               'status_code': 'На исполнении',
 #               }))
 
-# DBConnection()._create_tables("./database/sql/schema.sql")
+DBConnection()._create_tables("./database/sql/pg_schema.sql")
 
 # x = json.loads(Employees.get_phone_book())['Архив']
 # x = pd.DataFrame(json.loads(Employees.get_phone_book()).keys())

@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 #from database.db import OrdersTable, SubOrdersTable, ReportDatabaseWriter
-from database.pg_db import OrdersTable, SubOrdersTable
+from database.pg_db import OrdersTable, SubOrdersTable, Users
 from database.ibso import Employees
 from datetime import datetime
 
@@ -154,8 +154,13 @@ async def start(request: Request):
 
 @app.get("/get_users")
 async def get_users():
-    x = json.loads(Employees().get_phone_book_for_selected())
+
+
+    # x = json.loads(Employees().get_phone_book_for_selected())
+    # print(x)
+    x = Users().get_users()
     print(x)
+
     return x
 
 # @app.get("/get_order_report", response_description='xlsx')

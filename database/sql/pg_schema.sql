@@ -44,5 +44,5 @@ CREATE TABLE IF NOT EXISTS HISTORY(
 
 CREATE TABLE IF NOT EXISTS USERS(
     user_name TEXT unique not null,
-    email text not null
+    email TEXT not null
 );
