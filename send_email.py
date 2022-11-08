@@ -3,8 +3,7 @@ from email.mime.text import MIMEText
 import smtplib
 from enum import Enum
 from database.utils import User, Action
-from database.db import OrdersTable
-from database.ibso import Employees
+from database.pg_db import OrdersTable, UsersTable
 import json
 
 
@@ -14,11 +13,12 @@ class Email:
         self.users = users
         self.action = action
 
-    def _send(self, to, txt_body):
+    def _send(self, to: str, txt_body: str) -> None:
         msg = MIMEMultipart()
         msg['From'] = "exhorter@akcept.ru"
+        msg['Subject'] = "Рассылка от системы поручений"
         msg['To'] = to
-        msg.attach(txt_body)
+        msg.attach(MIMEText(txt_body, "html"))
 
         server = smtplib.SMTP("10.0.100.10", 25)
         server.sendmail(msg['From'], msg['To'], msg.as_string())
@@ -32,32 +32,46 @@ class Email:
                 message = BodyMessage.UPDATE.format(suborder_id=self.id)
             case Action.DELETE:
                 message = BodyMessage.DELETE.format(suborder_id=self.id)
-        [self.send(email, message.value) for _, email in self.users]
+            # case Action.CLOSE:
+            #     message = BodyMessage.CLOSE.format(suborder_id=self.id)
+        [self._send(email, message) for _, email in self.users]
 
 
 class BodyMessage(str, Enum):
-    ADD = MIMEText(
-        """
+    ADD ="""
         <pre>
         Добрый день.
-        Вам назначено новое поручение. Перейдите по ссылке для ознакомления:
-        <a href="http://192.168.200.168/close_suborder/"{suborder_id}</a>
-        </pre>
-        """, "html")
-    UPDATE = MIMEText(
-        """
+        Вам назначено новое поручение. Перейдите по ссылке для ознакомления.
+        <a href="http://192.168.200.92/close_suborder/{suborder_id}">поручение</a>
+
+        *Данное письмо сформированно автоматически, не нужно на него отвечать.
+        </pre>"""
+    UPDATE = """
+        <pre>
         Добрый день.
-        Поручение обновлено. Перейдите по ссылке для ознакомления:
-        <a href="http://192.168.200.168/close_suborder/"{suborder_id}</a>
+        Поручение обновлено. Перейдите по ссылке для ознакомления.
+        <a href="http://192.168.200.92/close_suborder/{suborder_id}">поручение</a>
+
+        *Данное письмо сформированно автоматически, не нужно на него отвечать.
         </pre>
-        """, "html")
-    DELETE = MIMEText(
         """
+    DELETE = """
+        <pre>
         Добрый день.
-        Поручение удалено. Перейдите по ссылке для ознакомления:
-        <a href="http://192.168.200.168/close_suborder/"{suborder_id}</a>
+        Поручение удалено. Перейдите по ссылке для ознакомления.
+        <a href="http://192.168.200.92/close_suborder/{suborder_id}">поручение</a>
+
+        *Данное письмо сформированно автоматически, не нужно на него отвечать.
         </pre>
-        """, "html")
+        """
+    # CLOSE = """
+    #     Добрый день.
+    #     Поручение закрыто. Перейдите по ссылке для ознакомления.
+    #     <a href="http://192.168.200.92/close_suborder/{suborder_id}">поручение</a>
+
+    #     *Данное письмо сформированно автоматически, не нужно на него отвечать.
+    #     </pre>
+    #     """
 
 
 class Reminder:
@@ -68,7 +82,7 @@ class Reminder:
     сроков.
     """
     def __init__(self) -> None:
-        self.phone_book = json.loads(Employees().get_phone_book())
+        self.users = json.loads(UsersTable().get_phone_book())
 
     def remind_to_employee(self) -> None:
         self._form_and_send(days=3)
@@ -90,11 +104,11 @@ class Reminder:
             for order in delay_orders:
                 title = order.get('title')
                 Email.send(
-                    self.phone_book.get(order['employee']),
+                    self.users.get(order['employee']),
                     message.format(title=title, days=days)
                 )
                 Email.send(
-                    self.phone_book.get(order['initiator']),
+                    self.users.get(order['initiator']),
                     message.format(title=title, days=days)
                 )
 

@@ -35,11 +35,10 @@ CREATE TABLE IF NOT EXISTS SUBORDERS(
 );
 
 CREATE TABLE IF NOT EXISTS HISTORY(
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     id_orders UUID NOT NULL,
-    id_suborders UUID NOT NULL,
-    change_date date NOT NULL default CURRENT_DATE,
-    data jsonb not null
+    id_suborders UUID,
+    data jsonb not null,
+    change_date date NOT NULL default CURRENT_DATE
 );
 
 CREATE TABLE IF NOT EXISTS USERS(

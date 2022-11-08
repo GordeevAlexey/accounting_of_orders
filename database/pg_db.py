@@ -3,10 +3,11 @@ import psycopg2
 import os
 from dotenv import load_dotenv
 from pypika import Query, Table, Case, functions as fn
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from typing import Dict, Any
 import requests
+from database.utils import User
 from database.utils import User
 
 #Алиас для json
@@ -289,6 +290,7 @@ class SubOrdersTable(BaseDB):
     def update_suborder(self, data: JsonDict) -> None:
         #Обязательно должен быть передан id записи и id_orders
         data = json.loads(data)
+        _id = data['id']
         q = Query.update(self.table).where(
             (self.table.id == data['id'])
             & (self.table.id_orders == data['id_orders'])
@@ -300,7 +302,8 @@ class SubOrdersTable(BaseDB):
                 cursor.execute(str(q))
         SubOrdersTable()._check_open_close_suborder(data['id_orders'])
         self.conn.close()
-        print(f'Успешно обновленны данные id:{data["id"]}')
+        HistoryTable().add(data)
+        print(f'Успешно обновленны данные id:{_id}')
 
     def add_suborder(self, row: JsonDict) -> str:
         """
@@ -329,8 +332,70 @@ class SubOrdersTable(BaseDB):
         SubOrdersTable()._check_open_close_suborder(order_id)
         print(f'Строка с id {suborder_id} "удалена" из suborders.')
 
+    def get_delay_suborders(self, id_orders: bytes, days: int = 0) -> JsonDict:
+        """
+        Возвращает выборку по просроченным поручениям.
+        """
+        id_orders = id_orders.decode('utf-8')
+        delay_date = datetime.today() + timedelta(days=days)
+        cols = (
+            'id',
+            'id_orders',
+            'title',
+            'employee',
+            'content',
+            'deadline'
+        )
+        q = Query.from_(self.table).select(*cols)\
+            .where(
+                (self.table.deleted == False) & (self.table.status_code != 'Исполнено')
+                & (self.table.deadline == delay_date.strftime('%d.%m.%Y'))
+                &(self.table.id_orders == id_orders)
+            )
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+                sub_orders = cursor.fetchall()
+        self.conn.close()
+        if sub_orders:
+            sub_orders = json.dumps([{k: v for k,v in zip(cols, row)} for row in sub_orders])
+        else:
+            sub_orders = None
+        return sub_orders
 
-class Users(BaseDB):
+
+class HistoryTable(BaseDB):
+    table = Table('history')
+
+    def __init__(self):
+        super().__init__()
+
+    def add(self, row: JsonDict) -> None:
+        cheсk_id_relation = row.get('id_orders')
+
+        match cheсk_id_relation:
+            case None:
+                id_orders = row.get('id')
+                id_suborders = None
+            case _:
+                id_orders = cheсk_id_relation
+                id_suborders = row.get('id')
+                del row['id_orders']
+        del row['id']
+
+        q = Query.into(self.table).columns(
+            self.table.id_orders,
+            self.table.id_suborders,
+            self.table.data,
+            ).insert(id_orders, id_suborders, json.dumps(row))
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+        self.conn.close()
+
+
+
+class UsersTable(BaseDB):
 
     table = Table('users')
 
@@ -377,7 +442,7 @@ class Users(BaseDB):
         Возвращает список именованный кортежей с именем пользователя и его почтой
         """
         q = Query.from_(self.table).select(self.table.star)\
-            .where(self.table.user_name.isin(list))
+            .where(self.table.user_name.isin(users))
         with self.conn:
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
@@ -404,7 +469,7 @@ class Users(BaseDB):
         return json.dumps(result)
 
     def update_users_table(self):
-        phonebook = Users.get_phone_book()
+        phonebook = UsersTable.get_phone_book()
         for row in phonebook:
             _columns = row.keys()
             q = Query.into(self.table).columns(*_columns).insert(*row.values())
@@ -421,7 +486,7 @@ class Users(BaseDB):
 
 if __name__ == "__main__":
     # BaseDB().create_tables()
-    # Users().update_users_table()
+    UsersTable().update_users_table()
     add_order_row = json.dumps({
         'issue_type': 'Приказ',
         'issue_idx': '666',
@@ -430,7 +495,7 @@ if __name__ == "__main__":
         'initiator': 'Сидорович Никита Сергеевич',
         'approving_employee':'Сидорович Никита Сергеевич',
         'deadline': '11.11.2022',
-        'status_code': 'В работе',
+        'status_code': 'На исполнении',
         'comment': 'какой-то коммент',
         'reference': r'C:\Users\sidorovich_ns\Desktop\Projects\accounting_of_orders\income\Приказ_продажа монет кассовым работником.doc',
     })
@@ -451,14 +516,14 @@ if __name__ == "__main__":
 
     add_suborder_row = json.dumps({
         'id_orders': "f1d367bc-176f-49bb-8a59-4f70a3133021",
-        'employee': "Сидорович Никита Сергеевич.",
+        'employee': "Сидорович Никита Сергеевич",
         'deadline': '12.11.2022',
         'content': 'Что-то еще',
-        'status_code': 'В работе',
+        'status_code': 'На исполнении',
         'comment': 'Новая подзадача',
     })
 
-    SubOrdersTable().add_suborder(add_suborder_row)
+    # SubOrdersTable().add_suborder(add_suborder_row)
 
     update_suborder_row = json.dumps({
         'id_orders': '41510fef-e109-4b54-93aa-db8b3bdeba3e',

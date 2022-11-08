@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 #from database.db import OrdersTable, SubOrdersTable, ReportDatabaseWriter
-from database.pg_db import OrdersTable, SubOrdersTable, Users
+from database.pg_db import OrdersTable, SubOrdersTable, UsersTable, HistoryTable
 from database.ibso import Employees
 from datetime import datetime
 
@@ -76,8 +76,8 @@ async def add_suborder(current_order_id: str,
         })
 
     suborder_id = SubOrdersTable().add_suborder(js)
-    users = Users.select_users(employee)
-    Email(suborder_id, users, Action.add).send()
+    users = UsersTable().select_users(employee)
+    Email(suborder_id, users, Action.ADD).send()
 
     return RedirectResponse("/", status_code=303)
 
@@ -98,6 +98,8 @@ async def update_suborder(current_order_id: str,
     })
 
     SubOrdersTable().update_suborder(js)
+    users = UsersTable().select_users(employee_up)
+    Email(current_suborder_id, users, Action.UPDATE).send()
 
     return RedirectResponse("/", status_code=303)
 
@@ -122,7 +124,7 @@ async def close_suborder(current_order_id: str,
 @app.post("/delete_suborder/{current_order_id}/{current_suborder_id}")
 async def delete_suborder(current_order_id: str,
                           current_suborder_id: str):
-    SubOrdersTable.delete_suborder_row(current_order_id, current_suborder_id)
+    SubOrdersTable().delete_suborder_row(current_order_id, current_suborder_id)
     return RedirectResponse("/", status_code=303)
 
 
@@ -154,14 +156,7 @@ async def start(request: Request):
 
 @app.get("/get_users")
 async def get_users():
-
-
-    # x = json.loads(Employees().get_phone_book_for_selected())
-    # print(x)
-    x = Users().get_users()
-    print(x)
-
-    return x
+    return UsersTable().get_users()
 
 # @app.get("/get_order_report", response_description='xlsx')
 # async def get_task_order_report():

@@ -14,6 +14,7 @@ class Action(str, Enum):
     ADD = "add"
     UPDATE = "update"
     DELETE = "delete"
+    # CLOSE = "close"
     
 
 @dataclass(frozen=True, slots=True)
