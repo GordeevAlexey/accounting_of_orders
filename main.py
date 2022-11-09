@@ -104,6 +104,8 @@ async def update_suborder(current_order_id: str,
     return RedirectResponse("/", status_code=303)
 
 
+#TODO: Заполнить поле комментарий
+#TODO: Нужно еще с фронта вернуть пользователей, за которыми стоит эта задача, для email рассылки
 @app.post("/close_suborder/{current_order_id}/{current_suborder_id}")
 async def close_suborder(current_order_id: str,
                          current_suborder_id: str,
@@ -112,11 +114,10 @@ async def close_suborder(current_order_id: str,
     js = json.dumps({
         "id_orders": current_order_id,
         "id": current_suborder_id,
-        "status_code": "Завершено",
-     #   "comment": comment_suborder
+    #    "comment": comment_suborder
     })
 
-    SubOrdersTable().update_suborder(js)
+    SubOrdersTable().close_suborder(js)
 
     return RedirectResponse("/", status_code=303)
 

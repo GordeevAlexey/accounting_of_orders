@@ -4,6 +4,7 @@ from datetime import datetime
 from schedule import every, run_pending, repeat
 from typing import NamedTuple
 from enum import Enum
+# from send_email import Reminder
 
 
 class User(NamedTuple):
@@ -14,8 +15,16 @@ class Action(str, Enum):
     ADD = "add"
     UPDATE = "update"
     DELETE = "delete"
-    # CLOSE = "close"
+    CLOSE = "close"
     
+
+@dataclass(frozen=True, slots=True)
+class SuborderRow:
+    id_orders: str
+    id: str
+    employee: str | None
+    deadline: str | None
+    content: str | None
 
 @dataclass(frozen=True, slots=True)
 class OrderRow:
@@ -42,8 +51,8 @@ class Order:
     order_rows: list[OrderRow]
 
 
-# @repeat(every().day.at("06:00"))
-@repeat(every(15).seconds)
+@repeat(every().day.at("07:00"))
+# @repeat(every(15).seconds)
 def check_delay_orders():
     three_days_delay = Reminder().three_days_delay
     execution_period_end= Reminder().three_days_delay 

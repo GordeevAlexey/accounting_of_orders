@@ -64,14 +64,14 @@ class BodyMessage(str, Enum):
         *Данное письмо сформированно автоматически, не нужно на него отвечать.
         </pre>
         """
-    # CLOSE = """
-    #     Добрый день.
-    #     Поручение закрыто. Перейдите по ссылке для ознакомления.
-    #     <a href="http://192.168.200.92/close_suborder/{suborder_id}">поручение</a>
+    CLOSE = """
+        Добрый день.
+        Поручение закрыто. Перейдите по ссылке для ознакомления.
+        <a href="http://192.168.200.92/close_suborder/{suborder_id}">поручение</a>
 
-    #     *Данное письмо сформированно автоматически, не нужно на него отвечать.
-    #     </pre>
-    #     """
+        *Данное письмо сформированно автоматически, не нужно на него отвечать.
+        </pre>
+        """
 
 
 class Reminder:
@@ -99,7 +99,7 @@ class Reminder:
                 "<b>Срок исполнения задачи {title} истек!</b>",
                 "html"
             )
-        delay_orders = json.loads(OrdersTable.get_delay_orders(days))
+        delay_orders = json.loads(SubordersTable.get_delay_orders(days))
         if delay_orders:
             for order in delay_orders:
                 title = order.get('title')

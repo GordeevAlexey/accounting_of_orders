@@ -7,8 +7,7 @@ from datetime import datetime, timedelta
 import json
 from typing import Dict, Any
 import requests
-from database.utils import User
-from database.utils import User
+from database.utils import User, SuborderRow
 
 #Алиас для json
 JsonDict = Dict[str, Any]
@@ -246,9 +245,8 @@ class SubOrdersTable(BaseDB):
                 finally:
                     cursor.close()
 
-    def get_suborders_table(self, id_orders: bytes) -> json:
+    def get_suborders_table(self, id_orders: str) -> json:
         # Выгрзука подзадач по отдельному приказу или поручению
-        # id_orders = id_orders.decode('utf-8')
         headers = SubOrdersTable()._get_suborders_header()
         headers.append('condition')
         q = Query.from_(self.table).select(self.table.star,
@@ -287,6 +285,35 @@ class SubOrdersTable(BaseDB):
                     }))
         self.conn.close()
 
+    def check_for_update(self, data_for_update: dict) -> JsonDict:
+        """
+        Функция проверяет какие данные в таблице suborders подлежат обновлению
+        и пишет их в таблицу history 
+        """
+        data_to_update = {
+            "id_orders": data_for_update['id_orders'],
+            "id": data_for_update['id'],
+        }
+        table_data = json.loads(SubOrdersTable().get_suborders_table(data_for_update['id_orders']))[0]
+
+        if data_for_update['employee'] != table_data['employee']:
+            data_to_update.update({"employee": data_for_update['employee']})
+
+        if data_for_update['deadline'] != table_data['deadline']:
+            data_to_update.update({"deadline": data_for_update['deadline']})
+
+        if data_for_update['content'] != table_data['content']:
+            data_to_update.update({"content": data_for_update['content']})
+
+        return data_to_update
+
+    def close_suborder(self, row: JsonDict) -> None:
+        row = json.loads(row)
+        q = Query.update(self.table).where(
+            (self.table.id == row['id']) &
+            (self.table.id_orders == row['id_orders'])
+        ).set('update_date', datetime.now())
+
     def update_suborder(self, data: JsonDict) -> None:
         #Обязательно должен быть передан id записи и id_orders
         data = json.loads(data)
@@ -302,7 +329,7 @@ class SubOrdersTable(BaseDB):
                 cursor.execute(str(q))
         SubOrdersTable()._check_open_close_suborder(data['id_orders'])
         self.conn.close()
-        HistoryTable().add(data)
+        HistoryTable().add(self.check_for_update(data))
         print(f'Успешно обновленны данные id:{_id}')
 
     def add_suborder(self, row: JsonDict) -> str:
