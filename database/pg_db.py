@@ -250,8 +250,8 @@ class SubOrdersTable(BaseDB):
         headers = SubOrdersTable()._get_suborders_header()
         headers.append('condition')
         q = Query.from_(self.table).select(self.table.star,
-                                          Case().when(self.table.status_code == "Завершено", True)\
-                                          .else_(False))\
+                                           Case().when(self.table.status_code == "Завершено", True)\
+                                           .else_(False))\
             .where((self.table.deleted == False) & (self.table.id_orders == id_orders))
         with self.conn:
             with self.conn.cursor() as cursor:
@@ -309,10 +309,21 @@ class SubOrdersTable(BaseDB):
 
     def close_suborder(self, row: JsonDict) -> None:
         row = json.loads(row)
+
         q = Query.update(self.table).where(
             (self.table.id == row['id']) &
             (self.table.id_orders == row['id_orders'])
-        ).set('update_date', datetime.now())
+        ).set('update_date', datetime.now())\
+         .set('close_date', datetime.now())\
+         .set('status_code', 'Завершено')
+        for key in row:
+            q = q.set(key, row[key])
+
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+        self.conn.close()
+        SubOrdersTable()._check_open_close_suborder(row['id_orders'])
 
     def update_suborder(self, data: JsonDict) -> None:
         #Обязательно должен быть передан id записи и id_orders
@@ -322,6 +333,7 @@ class SubOrdersTable(BaseDB):
             (self.table.id == data['id'])
             & (self.table.id_orders == data['id_orders'])
         ).set('update_date', datetime.now())
+
         for key in data:
             q = q.set(key, data[key])
         with self.conn:
@@ -348,7 +360,7 @@ class SubOrdersTable(BaseDB):
         print(f"Поручение добавлено")
         return suborder_id
 
-    def delete_suborder_row(self, order_id: bytes, suborder_id: str) -> None:
+    def delete_suborder_row(self, order_id: str, suborder_id: str) -> None:
         #? шляпа с хинтами
         q = Query.update(self.table).where(self.table.id == suborder_id)\
             .set('deleted', True)
@@ -419,7 +431,6 @@ class HistoryTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
         self.conn.close()
-
 
 
 class UsersTable(BaseDB):
@@ -511,6 +522,47 @@ class UsersTable(BaseDB):
         print(f"Таблица пользователей обновлена")
 
 
+class Reports(BaseDB):
+    table_orders = Table('orders')
+    table_sub_orders = Table('suborders')
+
+    def __init__(self):
+        super().__init__()
+
+    def get_info_suborder(self, uuid_suboder):
+        headers = ["id_order", "issue_type", "issue_idx", "approving_date", "title", "initiator", "approving_employee",
+                   "deadline", "comment", "id_suborder", "employee", "deadline_suborder", "status_code", "content",
+                   "comment_suborder"]
+        q = Query\
+            .from_(self.table_sub_orders)\
+            .join(self.table_orders)\
+            .on(self.table_sub_orders.id_orders == self.table_orders.id)\
+            .select(self.table_orders.id,
+                    self.table_orders.issue_type,
+                    self.table_orders.issue_idx,
+                    self.table_orders.approving_date,
+                    self.table_orders.title,
+                    self.table_orders.initiator,
+                    self.table_orders.approving_employee,
+                    self.table_orders.deadline,
+                    self.table_orders.comment,
+                    self.table_sub_orders.id,
+                    self.table_sub_orders.employee,
+                    self.table_sub_orders.deadline,
+                    self.table_sub_orders.status_code,
+                    self.table_sub_orders.content,
+                    self.table_sub_orders.comment)\
+            .where(self.table_sub_orders.id == uuid_suboder)
+
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+                orders = cursor.fetchall()
+
+        result = [{k: v for k, v in zip(headers, row)} for row in orders]
+        cursor.close()
+        return json.dumps(result, default=str)
+
 if __name__ == "__main__":
     # BaseDB().create_tables()
     UsersTable().update_users_table()
@@ -520,7 +572,7 @@ if __name__ == "__main__":
         'approving_date': '19.10.2022',
         'title': "ТЕСТ1",
         'initiator': 'Сидорович Никита Сергеевич',
-        'approving_employee':'Сидорович Никита Сергеевич',
+        'approving_employee': 'Сидорович Никита Сергеевич',
         'deadline': '11.11.2022',
         'status_code': 'На исполнении',
         'comment': 'какой-то коммент',

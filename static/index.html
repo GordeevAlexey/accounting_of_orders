@@ -191,6 +191,7 @@
 <script>
 
 $(document).ready(function() {
+
     $('#initiator').select2({
         placeholder: "Выбирите инициатора"});
 
@@ -329,10 +330,8 @@ function deleteSuborder() {
         $.post("http://192.168.200.168:8004/delete_suborder/" +
         document.getElementById('current_order_id').value +"/"+
         document.getElementById('current_suborder_id').value, function(response){
-                alert(document.getElementById('orders'));
             })
         }
-
 }
 
 </script>
@@ -357,13 +356,17 @@ function deleteSuborder() {
 <script>
 
     var users = $.get( "http://192.168.200.168:8004/get_users", function(response) {
-        $.each(response, function(key, value) {
+        $.each(JSON.parse(response), function(key, value) {
+
             $('#approving_employee, #initiator, #employee, #employee_up')
             .append($("<option></option>")
-                        .attr("value", key)
+                        .attr("value", value)
                         .text(value));
         });
     });
+
+
+
 </script>
 
 </body>

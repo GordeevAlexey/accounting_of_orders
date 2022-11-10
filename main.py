@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 #from database.db import OrdersTable, SubOrdersTable, ReportDatabaseWriter
-from database.pg_db import OrdersTable, SubOrdersTable, UsersTable, HistoryTable
+from database.pg_db import OrdersTable, SubOrdersTable, UsersTable, HistoryTable, Reports
 from database.ibso import Employees
 from datetime import datetime
 
@@ -89,6 +89,9 @@ async def update_suborder(current_order_id: str,
                           deadline_up: str = Form(),
                           content_up: str = Form()
                           ):
+    ###
+    js_old = SubOrdersTable().get_suborders_table(current_suborder_id)
+
     js = json.dumps({
         "id_orders": current_order_id,
         "id": current_suborder_id,
@@ -109,12 +112,12 @@ async def update_suborder(current_order_id: str,
 @app.post("/close_suborder/{current_order_id}/{current_suborder_id}")
 async def close_suborder(current_order_id: str,
                          current_suborder_id: str,
-                         ):
-    #comment_suborder: str = Form()
+                         comment: str = Form()):
+
     js = json.dumps({
         "id_orders": current_order_id,
         "id": current_suborder_id,
-    #    "comment": comment_suborder
+        "comment": comment
     })
 
     SubOrdersTable().close_suborder(js)
@@ -147,7 +150,7 @@ async def close_suborder(suborder_id: str, request: Request):
 
 @app.get("/get_info_for_close_suborder/{suborder_id}")
 async def get_info_for_close_suborder(suborder_id: str):
-    return ReportDatabaseWriter.get_info(suborder_id)
+    return Reports().get_info_suborder(suborder_id)
 
 
 @app.get("/")
@@ -171,8 +174,8 @@ async def get_users():
 
 if __name__ == "__main__":
     uvicorn.run("main:app",
-                host="192.168.200.92",
-                # host="192.168.200.168",
+                # host="192.168.200.92",
+                host="192.168.200.168",
                 # headers=[('server', 'top4ik')],
                 port=8004,
                 reload=True)
