@@ -119,7 +119,6 @@ class OrdersTable(BaseDB):
                 orders = cursor.fetchall()
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
         self.conn.close()
-        print(result)
         return json.dumps(result, default=str)
 
     def get_orders_table(self) -> JsonDict:
@@ -312,7 +311,11 @@ class SubOrdersTable(BaseDB):
         q = Query.update(self.table).where(
             (self.table.id == row['id']) &
             (self.table.id_orders == row['id_orders'])
-        ).set('update_date', datetime.now())
+        ).set('update_date', datetime.now()).set('status_code', "Завершено")
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+        self.conn.close()
 
     def update_suborder(self, data: JsonDict) -> None:
         #Обязательно должен быть передан id записи и id_orders
@@ -359,36 +362,36 @@ class SubOrdersTable(BaseDB):
         SubOrdersTable()._check_open_close_suborder(order_id)
         print(f'Строка с id {suborder_id} "удалена" из suborders.')
 
-    def get_delay_suborders(self, id_orders: bytes, days: int = 0) -> JsonDict:
+    def get_delay_suborders(self, days: int = 0) -> dict[str,str] | None:
         """
         Возвращает выборку по просроченным поручениям.
         """
-        id_orders = id_orders.decode('utf-8')
         delay_date = datetime.today() + timedelta(days=days)
         cols = (
             'id',
-            'id_orders',
-            'title',
+            # 'id_orders',
             'employee',
-            'content',
-            'deadline'
+            # 'content',
+            # 'deadline'
         )
         q = Query.from_(self.table).select(*cols)\
             .where(
-                (self.table.deleted == False) & (self.table.status_code != 'Исполнено')
+                (self.table.deleted == False) & (self.table.status_code != 'Завершено')
                 & (self.table.deadline == delay_date.strftime('%d.%m.%Y'))
-                &(self.table.id_orders == id_orders)
             )
         with self.conn:
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
-                sub_orders = cursor.fetchall()
+                suborders = cursor.fetchall()
         self.conn.close()
-        if sub_orders:
-            sub_orders = json.dumps([{k: v for k,v in zip(cols, row)} for row in sub_orders])
+        if suborders:
+            suborders = [{k: v for k,v in zip(cols, row)} for row in suborders]
+            for order in suborders:
+                users = UsersTable().select_users(order['employee'].split(", "))
+                order.update({'employee': users})
         else:
-            sub_orders = None
-        return sub_orders
+            suborders = None
+        return suborders
 
 
 class HistoryTable(BaseDB):

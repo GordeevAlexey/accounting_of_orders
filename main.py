@@ -1,8 +1,6 @@
 import json
 from datetime import datetime
-#from database.db import OrdersTable, SubOrdersTable, ReportDatabaseWriter
-from database.pg_db import OrdersTable, SubOrdersTable, UsersTable, HistoryTable
-from database.ibso import Employees
+from database.pg_db import OrdersTable, SubOrdersTable, UsersTable
 from datetime import datetime
 
 import uvicorn
@@ -13,13 +11,21 @@ from starlette.responses import RedirectResponse
 from starlette.templating import Jinja2Templates
 
 from send_email import Email
-from email.mime.text import MIMEText
-#from reports import Report
-from fastapi.responses import StreamingResponse
 from database.utils import Action
+from reminder_schedule import Reminder
+
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.combining import OrTrigger
 
 
 app = FastAPI()
+
+
+scheduler = AsyncIOScheduler()
+scheduler.start()
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -56,7 +62,6 @@ async def add_order(issue_idx: str = Form(),
         "status_code": 'На исполнении'
         })
 
-    #OrdersTable.add_order(js)
     OrdersTable().add_order(js)
     return RedirectResponse("/", status_code=303)
 
@@ -69,7 +74,7 @@ async def add_suborder(current_order_id: str,
 
     js = json.dumps({
         "id_orders": current_order_id,
-        "employee": str(', '.join(employee)),
+        "employee": ', '.join(employee),
         "deadline": datetime.strptime(deadline, '%Y-%m-%d').strftime("%d.%m.%Y"),
         "content": content,
         "status_code": 'На исполнении'
@@ -77,7 +82,7 @@ async def add_suborder(current_order_id: str,
 
     suborder_id = SubOrdersTable().add_suborder(js)
     users = UsersTable().select_users(employee)
-    Email(suborder_id, users, Action.ADD).send()
+    Email.send_info(suborder_id, users, Action.ADD)
 
     return RedirectResponse("/", status_code=303)
 
@@ -99,13 +104,11 @@ async def update_suborder(current_order_id: str,
 
     SubOrdersTable().update_suborder(js)
     users = UsersTable().select_users(employee_up)
-    Email(current_suborder_id, users, Action.UPDATE).send()
+    Email.send_info(current_suborder_id, users, Action.UPDATE)
 
     return RedirectResponse("/", status_code=303)
 
 
-#TODO: Заполнить поле комментарий
-#TODO: Нужно еще с фронта вернуть пользователей, за которыми стоит эта задача, для email рассылки
 @app.post("/close_suborder/{current_order_id}/{current_suborder_id}")
 async def close_suborder(current_order_id: str,
                          current_suborder_id: str,
@@ -159,6 +162,29 @@ async def start(request: Request):
 async def get_users():
     return UsersTable().get_users()
 
+
+@app.post("/reminder/start/", tags=["reminder"])
+async def start_reminder():
+    print("Планировщик создан")
+    trigger = OrTrigger([
+        CronTrigger(day_of_week=day, hour=6, minute=30)
+            for day in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')])
+
+    reminder_job = scheduler.add_job(
+        Reminder().remind_to_employee,
+        trigger=trigger,
+        id="reminder",
+        replace_existing=True,
+    )
+    return {"Scheduled": True,"JobID": reminder_job.id}
+
+
+@app.delete("/reminder/delete/", tags=["reminder"])
+async def start_reminder():
+    print("Планировщик удален")
+    scheduler.remove_job("reminder")
+    return {"Scheduled": False,"JobID": "reminder"}
+
 # @app.get("/get_order_report", response_description='xlsx')
 # async def get_task_order_report():
 #     #Скачивает отчет
@@ -173,6 +199,5 @@ if __name__ == "__main__":
     uvicorn.run("main:app",
                 host="192.168.200.92",
                 # host="192.168.200.168",
-                # headers=[('server', 'top4ik')],
                 port=8004,
                 reload=True)
