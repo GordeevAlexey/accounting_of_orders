@@ -1,21 +1,67 @@
 from uuid import uuid4
 from dataclasses import dataclass, asdict
 from datetime import datetime
-from schedule import every, run_pending, repeat
 from typing import NamedTuple
 from enum import Enum
-# from send_email import Reminder
+
+
+class BodyMessage(str, Enum):
+    ADD ="""
+        <pre>
+        Добрый день.<br>
+        Вам назначено новое поручение.<br>
+        Перейдите по <a href="http://192.168.200.92/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+        *Данное письмо сформированно автоматически, не нужно на него отвечать.
+        </pre>"""
+    UPDATE = """
+        <pre>
+        Добрый день.<br>
+        Поручение обновлено.<br>
+        Перейдите по <a href="http://192.168.200.92/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+        *Данное письмо сформированно автоматически, не нужно на него отвечать.
+        </pre>
+        """
+    DELETE = """
+        <pre>
+        Добрый день.<br>
+        Поручение удалено.<br>
+        Перейдите по <a href="http://192.168.200.92/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+        *Данное письмо сформированно автоматически, не нужно на него отвечать.
+        </pre>
+        """
+    CLOSE = """
+        </pre>
+        Добрый день.<br>
+        Поручение закрыто.<br>
+
+        *Данное письмо сформированно автоматически, не нужно на него отвечать.
+        </pre>
+        """
+    WARNING_DELAY = """
+        </pre>
+        До окончания срока исполнения задачи осталось {days}!<br>
+        Перейдите по <a href="http://192.168.200.92/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+        *Данное письмо сформированно автоматически, не нужно на него отвечать.
+        </pre>"""
+    CRITICAL_DELAY = """
+        </pre>
+        Срок исполнения задачи истек!<br>
+        Перейдите по <a href="http://192.168.200.92/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+        *Данное письмо сформированно автоматически, не нужно на него отвечать.
+        </pre>"""
 
 
 class User(NamedTuple):
     name: str
     email: str
 
+
 class Action(str, Enum):
     ADD = "add"
     UPDATE = "update"
     DELETE = "delete"
     CLOSE = "close"
+    DELAY = "delay"
     
 
 @dataclass(frozen=True, slots=True)
@@ -50,9 +96,3 @@ class OrderRow:
 class Order:
     order_rows: list[OrderRow]
 
-
-@repeat(every().day.at("07:00"))
-# @repeat(every(15).seconds)
-def check_delay_orders():
-    three_days_delay = Reminder().three_days_delay
-    execution_period_end= Reminder().three_days_delay 

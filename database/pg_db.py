@@ -333,7 +333,6 @@ class SubOrdersTable(BaseDB):
             (self.table.id == data['id'])
             & (self.table.id_orders == data['id_orders'])
         ).set('update_date', datetime.now())
-
         for key in data:
             q = q.set(key, data[key])
         with self.conn:
@@ -371,36 +370,36 @@ class SubOrdersTable(BaseDB):
         SubOrdersTable()._check_open_close_suborder(order_id)
         print(f'Строка с id {suborder_id} "удалена" из suborders.')
 
-    def get_delay_suborders(self, id_orders: bytes, days: int = 0) -> JsonDict:
+    def get_delay_suborders(self, days: int = 0) -> dict[str,str] | None:
         """
         Возвращает выборку по просроченным поручениям.
         """
-        id_orders = id_orders.decode('utf-8')
         delay_date = datetime.today() + timedelta(days=days)
         cols = (
             'id',
-            'id_orders',
-            'title',
+            # 'id_orders',
             'employee',
-            'content',
-            'deadline'
+            # 'content',
+            # 'deadline'
         )
         q = Query.from_(self.table).select(*cols)\
             .where(
-                (self.table.deleted == False) & (self.table.status_code != 'Исполнено')
+                (self.table.deleted == False) & (self.table.status_code != 'Завершено')
                 & (self.table.deadline == delay_date.strftime('%d.%m.%Y'))
-                &(self.table.id_orders == id_orders)
             )
         with self.conn:
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
-                sub_orders = cursor.fetchall()
+                suborders = cursor.fetchall()
         self.conn.close()
-        if sub_orders:
-            sub_orders = json.dumps([{k: v for k,v in zip(cols, row)} for row in sub_orders])
+        if suborders:
+            suborders = [{k: v for k,v in zip(cols, row)} for row in suborders]
+            for order in suborders:
+                users = UsersTable().select_users(order['employee'].split(", "))
+                order.update({'employee': users})
         else:
-            sub_orders = None
-        return sub_orders
+            suborders = None
+        return suborders
 
 
 class HistoryTable(BaseDB):
@@ -572,7 +571,7 @@ if __name__ == "__main__":
         'approving_date': '19.10.2022',
         'title': "ТЕСТ1",
         'initiator': 'Сидорович Никита Сергеевич',
-        'approving_employee': 'Сидорович Никита Сергеевич',
+        'approving_employee':'Сидорович Никита Сергеевич',
         'deadline': '11.11.2022',
         'status_code': 'На исполнении',
         'comment': 'какой-то коммент',
