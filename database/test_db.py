@@ -1,4 +1,4 @@
-from db import *
+from pg_db import *
 import json
 
 

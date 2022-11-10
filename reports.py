@@ -1,7 +1,7 @@
 from ast import Or
 import xlsxwriter
 from io import BytesIO
-from database.db import OrdersTable, SubOrdersTable
+from database.pg_db import OrdersTable, SubOrdersTable
 import json
 from datetime import datetime
 

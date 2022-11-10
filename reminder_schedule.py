@@ -33,4 +33,4 @@ class Reminder:
             for order in delay_orders:
                 for _, email in order['employee']:
                     to = email
-                    Email()._send(to, message.format(suborder_id=order['id']))
+                    Email._send(to, message.format(suborder_id=order['id']))

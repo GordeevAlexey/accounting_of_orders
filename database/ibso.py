@@ -40,8 +40,8 @@ class IBSO(ABC):
 class Employees(IBSO):
     sql_file = 'database/sql/ibso_employees.sql'
 
-    # def __init__(self) -> None:
-    #     super().__init__()
+    def __init__(self) -> None:
+        super().__init__()
 
     def _get_query(self) -> str:
         return super()._get_query(self.sql_file)
@@ -62,45 +62,3 @@ class Employees(IBSO):
         df = df.PRIVATE_PERSON
         employees = dict(zip(df, df))
         return json.dumps(employees)
-
-    @staticmethod
-    def get_phone_book() -> json:
-        """
-        Тянет данные с портала
-        """
-        phonebook = {}
-        r = requests.get('http://portal/phonebook')
-        soup = bs(r.text, "html.parser")
-        main_table = soup.find_all('tr', class_='usTblContent')
-        for table in main_table:
-            table = tuple(map(lambda x: x.text.replace('\n', ''), table))
-            phonebook.update(
-                {
-                    table[3]: {
-                    'position': table[5],
-                    'mail': table[9],
-                    'phone': table[11] or '-',
-                    }
-                }
-            )
-        return json.dumps(phonebook)
-
-    @staticmethod
-    def get_phone_book_for_selected() -> json:
-        """
-        Тянет ФИО с портала для заполнения выпадающих списков
-        """
-        phonebook = {}
-        r = requests.get('http://portal/phonebook')
-        soup = bs(r.text, "html.parser")
-        main_table = soup.find_all('tr', class_='usTblContent')
-        for table in main_table:
-            table = tuple(map(lambda x: x.text.replace('\n', ''), table))
-            if table[9] != "":
-                phonebook.update(
-                    {
-                        table[3]: table[3]
-                    }
-                )
-
-        return json.dumps(phonebook)
