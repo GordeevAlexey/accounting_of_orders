@@ -87,12 +87,29 @@ class ReportRow(NamedTuple):
 
 
 def date_formatter(json: dict[str, Any]) -> None:
+    if not json:
+        return {}
     for key, value in json.items():
         if key in ('create_date', 'update_date', 'close_date', 'change_date'):
             json[key] = value.strftime("%d.%m.%Y %H:%M:%S")
         elif key in ('deadline', 'approving_date'):
             json[key] = value.strftime("%d.%m.%Y")
+    return json
 
 
+
+
+# add_suborder_row = {
+#         'id_orders': "f1d367bc-176f-49bb-8a59-4f70a3133021",
+#         'employee': "Сидорович Никита Сергеевич",
+#         'deadline': datetime.date.today(),
+#         'content': 'Что-то еще',
+#         'status_code': 'На исполнении',
+#         'comment': 'Новая подзадача',
+#         'create_date': datetime.datetime.now(),
+#     }
+# lst = [add_suborder_row]
+
+# print(tuple(map(date_formatter, lst)))
 
 
