@@ -47,16 +47,15 @@ async def add_order(issue_idx: str = Form(),
                     comment: str = Form(),
                     reference: str = Form()):
 
-    print(datetime.strptime(approving_date, '%Y-%m-%d').strftime('%d.%m.%Y'))
 
     js = json.dumps({
         "issue_type": issue_type,
         "issue_idx": issue_idx,
-        "approving_date": datetime.strptime(approving_date, '%Y-%m-%d').strftime("%d.%m.%Y"),
+        "approving_date": approving_date,
         "title": title,
         "initiator": ', '.join(initiator),
         "approving_employee": ', '.join(approving_employee),
-        "deadline": datetime.strptime(deadline, '%Y-%m-%d').strftime("%d.%m.%Y"),
+        "deadline": deadline,
         "comment": comment,
         "reference": reference,
         "status_code": 'На исполнении'
@@ -76,7 +75,7 @@ async def add_suborder(current_order_id: str,
     js = json.dumps({
         "id_orders": current_order_id,
         "employee": ', '.join(employee),
-        "deadline": datetime.strptime(deadline, '%Y-%m-%d').strftime("%d.%m.%Y"),
+        "deadline": deadline,
         "content": content,
         "status_code": 'На исполнении'
         })
@@ -98,8 +97,8 @@ async def update_suborder(current_order_id: str,
     js = json.dumps({
         "id_orders": current_order_id,
         "id": current_suborder_id,
-        "employee": str(', '.join(employee_up)),
-        "deadline": datetime.strptime(deadline_up, '%Y-%m-%d').strftime("%d.%m.%Y"),
+        "employee": ', '.join(employee_up),
+        "deadline": deadline_up,
         "content": content_up
     })
 

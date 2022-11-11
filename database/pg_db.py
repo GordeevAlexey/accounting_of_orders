@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from pypika import Query, Table, Case, functions as fn
 from datetime import datetime, timedelta
+from database.utils import date_formatter
 import json
 from typing import Dict, Any
 import requests
@@ -86,6 +87,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
+                date_formatter(orders)
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
         self.conn.close()
         return json.dumps(result, default=str)
@@ -117,6 +119,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
+                date_formatter(orders)
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
         self.conn.close()
         print(result)
@@ -131,6 +134,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
+                date_formatter(orders)
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
         self.conn.close()
         return json.dumps(result, default=str)
@@ -144,6 +148,7 @@ class OrdersTable(BaseDB):
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
+                date_formatter(result)
         self.conn.close()
         return json.dumps(result, default=str)
 
@@ -157,6 +162,7 @@ class OrdersTable(BaseDB):
             'title',
             'initiator',
             'approving_employee',
+            'employee',
             'deadline',
             'status_code',
             'close_date',
@@ -169,6 +175,7 @@ class OrdersTable(BaseDB):
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
                 result = [{k: v for k,v in zip(headers, row)} for row in orders]
+                date_formatter(result)
         cursor.close()
         return json.dumps(result)
 
@@ -258,6 +265,7 @@ class SubOrdersTable(BaseDB):
                 cursor.execute(str(q))
                 suborders = cursor.fetchall()
                 result = [{k: v for k, v in zip(headers, row)} for row in suborders]
+                date_formatter(result)
                 cursor.close()
 
         return json.dumps(result, default=str)
@@ -345,7 +353,7 @@ class SubOrdersTable(BaseDB):
 
     def add_suborder(self, row: JsonDict) -> str:
         """
-        Возвращает id подзадачи
+        Возвращает созданный id подзадачи
         """
         row = json.loads(row)
         _columns = row.keys()
@@ -394,6 +402,7 @@ class SubOrdersTable(BaseDB):
         self.conn.close()
         if suborders:
             suborders = [{k: v for k,v in zip(cols, row)} for row in suborders]
+            date_formatter(suborders)
             for order in suborders:
                 users = UsersTable().select_users(order['employee'].split(", "))
                 order.update({'employee': users})
@@ -528,7 +537,7 @@ class Reports(BaseDB):
     def __init__(self):
         super().__init__()
 
-    def get_info_suborder(self, uuid_suboder):
+    def get_info_suborder(self, id_suborder: str) -> JsonDict:
         headers = ["id_order", "issue_type", "issue_idx", "approving_date", "title", "initiator", "approving_employee",
                    "deadline", "comment", "id_suborder", "employee", "deadline_suborder", "status_code", "content",
                    "comment_suborder"]
@@ -551,7 +560,7 @@ class Reports(BaseDB):
                     self.table_sub_orders.status_code,
                     self.table_sub_orders.content,
                     self.table_sub_orders.comment)\
-            .where(self.table_sub_orders.id == uuid_suboder)
+            .where(self.table_sub_orders.id == id_suborder)
 
         with self.conn:
             with self.conn.cursor() as cursor:
@@ -559,7 +568,8 @@ class Reports(BaseDB):
                 orders = cursor.fetchall()
 
         result = [{k: v for k, v in zip(headers, row)} for row in orders]
-        cursor.close()
+        date_formatter(result)
+        self.conn.close()
         return json.dumps(result, default=str)
 
 if __name__ == "__main__":
