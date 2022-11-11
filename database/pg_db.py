@@ -175,8 +175,8 @@ class OrdersTable(BaseDB):
     def add_order(self, row: JsonDict) -> None:
         table = Table("orders")
         row = json.loads(row)
-        row['approving_date'] = datetime.strptime(row['approving_date'], "%d.%m.%Y").date()
-        row['deadline'] = datetime.strptime(row['deadline'], "%d.%m.%Y").date()
+        # row['approving_date'] = datetime.strptime(row['approving_date'], "%d.%m.%Y").date()
+        # row['deadline'] = datetime.strptime(row['deadline'], "%d.%m.%Y").date()
         _columns = row.keys()
         q = Query.into(table).columns(*_columns).insert(*row.values())
         with self.conn:

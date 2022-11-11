@@ -143,7 +143,7 @@
     <form action="" id="close_suborder_form" method="post" onsubmit="return addActionForm('close_suborder_form');">
         <tr>
             <td><label for="comment_suborder">Комментарии</label></td>
-            <td><input style="height:130px" type="text" id="comment_suborder"></td>
+            <td><input name="comment_suborder" id="comment_suborder" style="height:130px" type="text"></td>
         </tr>
         <tr>
             <td></td>
@@ -196,7 +196,6 @@
         var order_id = escape(document.getElementById('current_order_id').value);
         var suborder_id = escape(document.getElementById('current_suborder_id').value);
         document.getElementById(arguments[0]).action = '/close_suborder/' + order_id + '/' + suborder_id
-        alert(document.getElementById(arguments[0]).action)
     }
 
 
@@ -205,3 +204,5 @@
 </body>
 
 </html>
+
+

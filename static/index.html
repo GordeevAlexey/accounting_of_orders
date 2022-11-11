@@ -171,7 +171,7 @@
 
 <div style="text-align: center" id="close_suborder" class="modalwin">
     <form action="" id="close_suborder_form" method="post" onsubmit="return addActionForm('close_suborder_form', 'close_suborder');">
-        <textarea name="comment" type="text" placeholder="Комментарии"></textarea>
+        <textarea name="comment_suborder" id="comment_suborder" type="text" placeholder="Комментарии"></textarea>
         <input type="submit" name="submit" value="Закрыть">
     </form>
 </div>
@@ -217,7 +217,7 @@ $(document).ready(function() {
         columns: [
                     { title: 'Вид поручения', field: 'issue_type' },
                     { title: 'Номер №', field: 'issue_idx' },
-                    { title: 'Дата утверждения', field: 'approving_date'},
+<!--                    { title: 'Дата утверждения', field: 'approving_date'},-->
                     { title: 'Тема', field: 'title' },
                     { title: 'Инициатор', field: 'initiator' },
                     { title: 'Утверждающий руководитель', field: 'approving_employee' },
@@ -225,7 +225,16 @@ $(document).ready(function() {
                     { title: 'Прогресс', field: 'progress', sorter: 'number', formatter: 'progress', editorParams:{min:1, max:100}},
                     { title: 'Срок исполнения', field: 'deadline' },
                     { title: 'Примечание', field: 'comment' },
-                    { title: 'Ссылка', field: 'reference', formatter:"link" }
+                    { title: 'Ссылка', field: 'reference', formatter:"link" },
+
+                    {title: "Example", field: 'approving_date', formatter:"datetime", formatterParams:{
+                        inputFormat:"yyyy-MM-dd",
+                        outputFormat:"dd.MM.yyyy",
+                        invalidPlaceholder:"(invalid date)",
+                        timezone:"America/Los_Angeles",
+                    }},
+
+
                  ],
 
         rowClick:function(e, row){

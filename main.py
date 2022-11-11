@@ -47,16 +47,20 @@ async def add_order(issue_idx: str = Form(),
                     comment: str = Form(),
                     reference: str = Form()):
 
-    print(datetime.strptime(approving_date, '%Y-%m-%d').strftime('%d.%m.%Y'))
+    print(approving_date)
+    print(deadline)
 
     js = json.dumps({
         "issue_type": issue_type,
         "issue_idx": issue_idx,
-        "approving_date": datetime.strptime(approving_date, '%Y-%m-%d').strftime("%d.%m.%Y"),
+        # "approving_date": datetime.strptime(approving_date, '%Y-%m-%d').strftime("%d.%m.%Y"),
+        "approving_date": approving_date,
         "title": title,
         "initiator": ', '.join(initiator),
         "approving_employee": ', '.join(approving_employee),
-        "deadline": datetime.strptime(deadline, '%Y-%m-%d').strftime("%d.%m.%Y"),
+        # "deadline": datetime.strptime(deadline, '%Y-%m-%d').strftime("%d.%m.%Y"),
+        "deadline": deadline,
+        "employee": "Гордеев Алексей Николаевич",
         "comment": comment,
         "reference": reference,
         "status_code": 'На исполнении'
@@ -113,12 +117,13 @@ async def update_suborder(current_order_id: str,
 @app.post("/close_suborder/{current_order_id}/{current_suborder_id}")
 async def close_suborder(current_order_id: str,
                          current_suborder_id: str,
-                         comment: str = Form()):
+                         comment_suborder: str = Form()):
 
+    print(comment_suborder)
     js = json.dumps({
         "id_orders": current_order_id,
         "id": current_suborder_id,
-        "comment": comment
+        "comment": comment_suborder
     })
 
     SubOrdersTable().close_suborder(js)
@@ -181,7 +186,7 @@ async def start_reminder():
 
 
 @app.delete("/reminder/delete/", tags=["reminder"])
-async def start_reminder():
+async def delete_reminder():
     print("Планировщик удален")
     scheduler.remove_job("reminder")
     return {"Scheduled": False,"JobID": "reminder"}
@@ -198,8 +203,8 @@ async def start_reminder():
 
 if __name__ == "__main__":
     uvicorn.run("main:app",
-                host="192.168.200.92",
-                # host="192.168.200.168",
+                # host="192.168.200.92",
+                host="192.168.200.168",
                 # headers=[('server', 'top4ik')],
                 port=8004,
                 reload=True)
