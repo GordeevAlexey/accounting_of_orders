@@ -1,7 +1,8 @@
- CREATE TABLE IF NOT EXISTS ORDERS (
+
+CREATE TABLE IF NOT EXISTS ORDERS (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     deleted boolean NOT NULL DEFAULT FALSE,
-    create_date timestamp NOT NULL default now(),
+    create_date date NOT NULL default CURRENT_DATE,
     update_date date default null,
     issue_type TEXT NOT NULL,
     issue_idx TEXT NOT NULL,
@@ -22,9 +23,9 @@ CREATE TABLE IF NOT EXISTS SUBORDERS(
     id_orders UUID NOT NULL,
     deleted boolean NOT NULL DEFAULT FALSE,
     create_date timestamp NOT NULL default now(),
-    update_date date default null,
+    update_date timestamp default null,
     employee TEXT NOT NULL,
-    deadline TEXT NOT NULL,
+    deadline date NOT NULL,
     content TEXT NOT NULL,
     status_code TEXT NOT NULL,
     close_date timestamp default null,
@@ -38,7 +39,7 @@ CREATE TABLE IF NOT EXISTS HISTORY(
     id_orders UUID NOT NULL,
     id_suborders UUID,
     data jsonb not null,
-    change_date timestamp NOT NULL default now()
+    update_date timestamp NOT NULL default now()
 );
 
 CREATE TABLE IF NOT EXISTS USERS(

@@ -1,4 +1,4 @@
-from pg_db import *
+# from pg_db import *
 import json
 
 
@@ -154,12 +154,12 @@ class TestSubOrdersTable:
 
 
 if __name__ == "__main__":
-    DBConnection()._create_tables('database\sql\schema.sql')
+    # DBConnection()._create_tables('database\sql\schema.sql')
     # TestOrdersTable.test_add_order(add_order_row)
     # TestSubOrdersTable().test_add_suborder(add_suborder_row)
     # TestSubOrdersTable().test_get_suborders_table(id_order)
     # TestSubOrdersTable().test_get_suborders_report_data(id_order)
-    TestSubOrdersTable().test_update_suborder(update_suborder_row)
+    # TestSubOrdersTable().test_update_suborder(update_suborder_row)
     # TestSubOrdersTable().test_get_delay_suborders(id_order)
     # TestOrdersTable().test_delete_order_row(id_order)
     # TestOrdersTable().test_get_orders_report_data()
@@ -169,3 +169,16 @@ if __name__ == "__main__":
     # TestSubOrdersTable().test_get_suborders_report_data(id_order)
     # TestSubOrdersTable().test_get_deleted_suborders_rows()
     # TestOrdersTable().test_get_deleted_orders_rows()
+
+    from dataclasses import dataclass
+
+
+    @dataclass
+    class A:
+        x: int | None
+        y: int | None
+        z: int | None
+
+
+a = A(1,2)
+print(a)

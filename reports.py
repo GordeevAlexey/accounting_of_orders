@@ -1,10 +1,11 @@
-from ast import Or
 import xlsxwriter
 from io import BytesIO
 from database.pg_db import OrdersTable, SubOrdersTable
 import json
-from datetime import datetime
-
+from datetime import datetime, timedelta
+from pypika import Query, Table, Case, functions as fn
+from database.utils import *
+from openpyxl import Workbook
 
 #ПОКА ЭТОТ КЛАСС НЕ ИСПОЛЬЗОВАТЬ, ПОКА НЕ СОГЛАСЮТ ШАБЛОН ОТЧЕТА 01.09.2022
 class OrderReport:
@@ -86,5 +87,104 @@ class OrderReport:
         self.output.seek(0)
 
 
+class WeeklyReportData:
+    def __init__(self) -> None:
+        # self.report_date= datetime.today()
+        # if self.report_date.weekday() == 4:
+        #     self.end_report_period = self.report_date - timedelta(days=7)
+        #     self.start_report_period = self.end_report_period - timedelta(days=4)
+        # else:
+        #     self.start_report_period = self.end_report_period = None
+        self.start_report_period = "2022-11-09"
+        self.end_report_period = "2022-11-11"
 
-OrderReport()._add_data_from_db()
+    def _get_orders(self) -> list[ReportRow]:
+        orders_table = Table('orders')
+        q = Query.from_(orders_table).select(
+                orders_table.id,
+                orders_table.issue_type,
+                orders_table.issue_idx,
+                orders_table.approving_date,
+                orders_table.title,
+                orders_table.initiator,
+                orders_table.approving_employee,
+                orders_table.employee,
+                orders_table.deadline,
+                orders_table.status_code,
+                orders_table.comment
+        ).where(
+            orders_table.approving_date[self.start_report_period:self.end_report_period]
+        )
+        orders = [ReportRow(*row) for row in OrdersTable().execute_query(str(q))]
+        return orders
+
+    def report_rows(self) -> list[ReportRow]:
+        orders = self._get_orders()
+        orders_ids = [row.id for row in orders]
+        suborders_table = Table("suborders")
+        q = Query.from_(suborders_table).select(
+                suborders_table.content,
+                suborders_table.deadline,
+                suborders_table.status_code,
+                suborders_table.comment
+        ).where(
+            suborders_table.id_orders.isin(orders_ids)
+        )
+        suborders = SubOrdersTable().execute_query(str(q))
+        report_rows = []
+        for order in orders:
+            print(order)
+            report_rows.append(order)
+            for suborder in suborders:
+                report_rows.append(
+                    ReportRow(
+                        title=suborder[0], deadline=suborder[1],
+                        status_code=suborder[2], comment=suborder[3],
+                        issue_type='Поручение', issue_idx=order.issue_idx,
+                        id=None, approving_date=None, initiator=None,
+                        approving_employee=None
+                        )
+                )
+        return report_rows
+
+class Report:
+    header = (
+       'Вид поручения',
+       '№',
+       'Дата утверждения',
+       'Тема',
+       'Инициатор',
+       'Утверждающий руководитель',
+       'Ответственные исполнители',
+       'Срок исполнения',
+       'Содержание поручения',
+       'Отметка об исполнении',
+       'Статус поручения',
+       'Дата закрытия',
+       'Примечание',
+    )
+
+    def __init__(self) -> None:
+        self.rows = WeeklyReportData().report_rows()
+        self.wb = Workbook()
+        self.ws = self.wb.active
+
+    def _data_to_sheet(self):
+        self.ws.append(self.header)
+        [self.ws.append(row[1:]) for row in self.rows]
+
+    def _apply_styles(self):
+        pass
+
+    def save_sheet(self):
+        self._data_to_sheet()
+        self.wb.save("Отчет.xlsx")
+
+
+
+
+# print(WeeklyReport().report_date)
+# print(WeeklyReport().start_report_period)
+# print(WeeklyReport().end_report_period)
+Report().save_sheet()
+        
