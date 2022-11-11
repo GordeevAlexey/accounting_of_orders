@@ -87,8 +87,8 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
-                date_formatter(orders)
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
+                result = list(map(date_formatter, result))
         self.conn.close()
         return json.dumps(result, default=str)
 
@@ -119,8 +119,8 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
-                date_formatter(orders)
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
+                result = list(map(date_formatter, result))
         self.conn.close()
         print(result)
         return json.dumps(result, default=str)
@@ -134,12 +134,12 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
-                date_formatter(orders)
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
+                result = list(map(date_formatter, result))
         self.conn.close()
         return json.dumps(result, default=str)
 
-    def _get_deleted_orders_rows(self) -> JsonDict:
+    def _get_deleted_orders_rows(self) -> JsonList:
         headers = OrdersTable()._get_orders_header()
         q = Query.from_(self.table).select(self.table.star)\
             .where(self.table.deleted == True)
@@ -148,7 +148,7 @@ class OrdersTable(BaseDB):
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
-                date_formatter(result)
+                result = list(map(date_formatter, result))
         self.conn.close()
         return json.dumps(result, default=str)
 
@@ -175,7 +175,7 @@ class OrdersTable(BaseDB):
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
                 result = [{k: v for k,v in zip(headers, row)} for row in orders]
-                date_formatter(result)
+                result = list(map(date_formatter, result))
         cursor.close()
         return json.dumps(result)
 
@@ -265,7 +265,7 @@ class SubOrdersTable(BaseDB):
                 cursor.execute(str(q))
                 suborders = cursor.fetchall()
                 result = [{k: v for k, v in zip(headers, row)} for row in suborders]
-                date_formatter(result)
+                result = list(map(date_formatter, result))
                 cursor.close()
 
         return json.dumps(result, default=str)
@@ -402,7 +402,7 @@ class SubOrdersTable(BaseDB):
         self.conn.close()
         if suborders:
             suborders = [{k: v for k,v in zip(cols, row)} for row in suborders]
-            date_formatter(suborders)
+            result = list(map(date_formatter, suborders))
             for order in suborders:
                 users = UsersTable().select_users(order['employee'].split(", "))
                 order.update({'employee': users})
@@ -514,7 +514,7 @@ class UsersTable(BaseDB):
         self.conn.close()
         return json.dumps(result)
 
-    def update_users_table(self):
+    def update_users_table(self) -> None:
         phonebook = UsersTable.get_phone_book()
         for row in phonebook:
             _columns = row.keys()
