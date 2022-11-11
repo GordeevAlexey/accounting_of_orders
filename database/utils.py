@@ -91,9 +91,9 @@ def date_formatter(json: dict[str, Any]) -> None:
         return {}
     for key, value in json.items():
         if key in ('create_date', 'update_date', 'close_date', 'change_date'):
-            json[key] = value.strftime("%d.%m.%Y %H:%M:%S")
+            json[key] = None if value is None else value.strftime("%d.%m.%Y %H:%M:%S")
         elif key in ('deadline', 'approving_date'):
-            json[key] = value.strftime("%d.%m.%Y")
+            json[key] = None if value is None else value.strftime("%d.%m.%Y")
     return json
 
 

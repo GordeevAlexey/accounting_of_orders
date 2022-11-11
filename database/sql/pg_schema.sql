@@ -2,8 +2,8 @@
 CREATE TABLE IF NOT EXISTS ORDERS (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     deleted boolean NOT NULL DEFAULT FALSE,
-    create_date date NOT NULL default CURRENT_DATE,
-    update_date date default null,
+    create_date timestamp NOT NULL default CURRENT_DATE,
+    update_date timestamp default null,
     issue_type TEXT NOT NULL,
     issue_idx TEXT NOT NULL,
     approving_date date not null,
