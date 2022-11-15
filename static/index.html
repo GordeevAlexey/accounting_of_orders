@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<?php header('Access-Control-Allow-Origin: *'); ?>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -42,13 +43,14 @@
             .btn, input, select {
                 font-variant: small-caps;
                 width:400px;
-                padding:18px;
+                padding:25px;
                 border-radius: 10px;
                 border:0;
                 box-shadow:0 0 15px 2px rgba(60,74,123,.7);
                 border-bottom:1px ;
                 box-sizing: border-box;
-                margin:8px
+                margin:8px;
+
             }
 
             textarea{
@@ -142,6 +144,7 @@
     <form action="/add_order" method="post">
         <select class="js-example-basic-multiple" name="issue_type" id="issue_type">
             <option value="Приказ" selected>Приказ</option>
+            <option value="Распоряжение" selected>Распоряжение</option>
         </select>
         <input name="issue_idx" type="text" placeholder="Номер №">
         <input name="approving_date" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Дата утверждения">
@@ -150,10 +153,12 @@
         <select class="initiator" name="initiator" id="initiator" multiple="multiple"></select>
         <br><br>
         <select class="approving_employee" name="approving_employee" id="approving_employee" multiple="multiple"></select>
+        <br><br>
+        <select class="employee_order" name="employee_order" id="employee_order" multiple="multiple"></select>
 
         <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Срок исполнения">
         <input name="comment" type="text" placeholder="Примечание">
-        <input name="reference" type="url" placeholder="Ссылка">
+        <input name="reference" type="link" placeholder="Ссылка">
 
         <input type="submit" name="submit" value="Сохранить">
     </form>
@@ -161,7 +166,7 @@
 
 <div style="text-align: center" id="add_suborder" class="modalwin">
     <form id="add_suborder_form" action="" method="post" onsubmit="return addActionForm('add_suborder_form', 'add_suborder');">
-        <select name="employee" id="employee" multiple="multiple"></select>
+        <select name="employee_sub_order" id="employee_sub_order" multiple="multiple"></select>
         <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Исполнить до...">
         <textarea name="content" type="text" placeholder="Описание поручения"></textarea>
         <input type="submit" name="submit" value="Сохранить">
@@ -198,11 +203,20 @@ $(document).ready(function() {
     $('#approving_employee').select2({
         placeholder: "Выбирите утверждающего руководителя"});
 
-    $('#employee').select2({
+    $('#employee_order').select2({
+        placeholder: "Выбирите ответственного исполнителя"});
+
+    $('#employee_sub_order').select2({
         placeholder: "Выбирите исполнителя"});
 
     $('#employee_up').select2({
         placeholder: "Выбирите исполнителя"});
+
+    function link(cell, formatterParams){
+        var url = cell.getValue();
+        return url;
+    }
+
 
     var url = 'http://192.168.200.168:8004/get_order';
 
@@ -216,16 +230,20 @@ $(document).ready(function() {
         layout: 'fitColumns',
         columns: [
                     { title: 'Вид поручения', field: 'issue_type' },
-                    { title: 'Номер №', field: 'issue_idx' },
-                    { title: 'Дата утверждения', field: 'approving_date'},
-                    { title: 'Тема', field: 'title' },
-                    { title: 'Инициатор', field: 'initiator' },
-                    { title: 'Утверждающий руководитель', field: 'approving_employee' },
-                    { title: 'Cтатус', field: 'status_code'},
+                    { title: 'Номер №', field: 'issue_idx', headerFilter: "input" },
+                    { title: 'Дата утверждения', field: 'approving_date', headerFilter: "input"},
+                    { title: 'Тема', field: 'title', headerFilter: "input"},
+                    { title: 'Инициатор', field: 'initiator', headerFilter: "input" },
+                    { title: 'Утверждающий руководитель', field: 'approving_employee', headerFilter: "input" },
+                    { title: 'Ответственный исполнитель', field: 'employee', headerFilter: "input"},
+                    { title: 'Cтатус', field: 'status_code', headerFilter: "input"},
                     { title: 'Прогресс', field: 'progress', sorter: 'number', formatter: 'progress', editorParams:{min:1, max:100}},
-                    { title: 'Срок исполнения', field: 'deadline' },
+                    { title: 'Срок исполнения', field: 'deadline', headerFilter: "input" },
                     { title: 'Примечание', field: 'comment' },
-                    { title: 'Ссылка', field: 'reference', formatter:"link" }
+                    { title: 'Ссылка', field: 'reference', formatter:"link", formatterParams : {
+                        target:"_blank",
+                        url:link ,
+                    } }
                  ],
 
         rowClick:function(e, row){
@@ -255,6 +273,8 @@ $(document).ready(function() {
                                 { title: 'Состояние', field:"condition", formatter:"tickCross"},
                                 { title: 'Комментарии', field: 'comment'}
                              ],
+
+
 
                     rowClick:function(e, row){
 
@@ -358,7 +378,7 @@ function deleteSuborder() {
     var users = $.get( "http://192.168.200.168:8004/get_users", function(response) {
         $.each(JSON.parse(response), function(key, value) {
 
-            $('#approving_employee, #initiator, #employee, #employee_up')
+            $('#approving_employee, #initiator, #employee_order, #employee_sub_order, #employee_up')
             .append($("<option></option>")
                         .attr("value", value)
                         .text(value));
@@ -368,6 +388,103 @@ function deleteSuborder() {
 
 
 </script>
+
+<script>
+
+    //custom max min header filter
+var minMaxFilterEditor = function(cell, onRendered, success, cancel, editorParams){
+
+    var end;
+
+    var container = document.createElement("span");
+
+    //create and style inputs
+    var start = document.createElement("input");
+    start.setAttribute("type", "number");
+    start.setAttribute("placeholder", "Min");
+    start.setAttribute("min", 0);
+    start.setAttribute("max", 100);
+    start.style.padding = "25px";
+    start.style.width = "25%";
+    start.style.boxSizing = "border-box";
+
+    start.value = cell.getValue();
+
+    function buildValues(){
+        success({
+            start:start.value,
+            end:end.value,
+        });
+    }
+
+    function keypress(e){
+        if(e.keyCode == 13){
+            buildValues();
+        }
+
+        if(e.keyCode == 27){
+            cancel();
+        }
+    }
+
+    end = start.cloneNode();
+    end.setAttribute("placeholder", "Max");
+
+    start.addEventListener("change", buildValues);
+    start.addEventListener("blur", buildValues);
+    start.addEventListener("keydown", keypress);
+
+    end.addEventListener("change", buildValues);
+    end.addEventListener("blur", buildValues);
+    end.addEventListener("keydown", keypress);
+
+
+    container.appendChild(start);
+    container.appendChild(end);
+
+    return container;
+ }
+
+//custom max min filter function
+function minMaxFilterFunction(headerValue, rowValue, rowData, filterParams){
+    //headerValue - the value of the header filter element
+    //rowValue - the value of the column in this row
+    //rowData - the data for the row being filtered
+    //filterParams - params object passed to the headerFilterFuncParams property
+
+        if(rowValue){
+            if(headerValue.start != ""){
+                if(headerValue.end != ""){
+                    return rowValue >= headerValue.start && rowValue <= headerValue.end;
+                }else{
+                    return rowValue >= headerValue.start;
+                }
+            }else{
+                if(headerValue.end != ""){
+                    return rowValue <= headerValue.end;
+                }
+            }
+        }
+
+    return true; //must return a boolean, true if it passes the filter.
+}
+
+
+var table = new Tabulator("#example-table", {
+    height:"311px",
+    layout:"fitColumns",
+    columns:[
+        {title:"Name", field:"name", width:150, headerFilter:"input"},
+        {title:"Progress", field:"progress", width:150, formatter:"progress", sorter:"number", headerFilter:minMaxFilterEditor, headerFilterFunc:minMaxFilterFunction, headerFilterLiveFilter:false},
+        {title:"Gender", field:"gender", editor:"list", editorParams:{values:{"male":"Male", "female":"Female", clearable:true}}, headerFilter:true, headerFilterParams:{values:{"male":"Male", "female":"Female", "":""}, clearable:true}},
+        {title:"Rating", field:"rating", editor:"star", hozAlign:"center", width:100, headerFilter:"number", headerFilterPlaceholder:"at least...", headerFilterFunc:">="},
+        {title:"Favourite Color", field:"col", editor:"input", headerFilter:"list", headerFilterParams:{valuesLookup:true, clearable:true}},
+        {title:"Date Of Birth", field:"dob", hozAlign:"center", sorter:"date",  headerFilter:"input"},
+        {title:"Driver", field:"car", hozAlign:"center", formatter:"tickCross",  headerFilter:"tickCross",  headerFilterParams:{"tristate":true},headerFilterEmptyCheck:function(value){return value === null}},
+    ],
+});
+
+</script>>
 
 </body>
 

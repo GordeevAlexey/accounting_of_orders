@@ -223,7 +223,7 @@ class OrdersTable(BaseDB):
         #Обязательно должен быть передан id записи
         data = json.loads(data)
         q = Query.update(self.table).where(self.table.id == data['id'])\
-            .set('update_date', datetime.now().strftime('%d.%m.%Y %H:%M:%S'))
+            .set('update_date', datetime.now())
         for key in data:
             q = q.set(key, data[key])
         with self.conn:
@@ -393,7 +393,7 @@ class SubOrdersTable(BaseDB):
         q = Query.from_(self.table).select(*cols)\
             .where(
                 (self.table.deleted == False) & (self.table.status_code != 'Завершено')
-                & (self.table.deadline == delay_date.strftime('%d.%m.%Y'))
+                & (self.table.deadline == delay_date.strftime('%Y-%m-%d'))
             )
         with self.conn:
             with self.conn.cursor() as cursor:
@@ -539,8 +539,8 @@ class Reports(BaseDB):
 
     def get_info_suborder(self, id_suborder: str) -> JsonDict:
         headers = ["id_order", "issue_type", "issue_idx", "approving_date", "title", "initiator", "approving_employee",
-                   "deadline", "comment", "id_suborder", "employee", "deadline_suborder", "status_code", "content",
-                   "comment_suborder"]
+                   "employee_order", "deadline", "comment", "reference", "id_suborder", "employee_sub_order", "deadline_suborder",
+                   "status_code", "content", "comment_suborder"]
         q = Query\
             .from_(self.table_sub_orders)\
             .join(self.table_orders)\
@@ -552,8 +552,10 @@ class Reports(BaseDB):
                     self.table_orders.title,
                     self.table_orders.initiator,
                     self.table_orders.approving_employee,
+                    self.table_orders.employee,
                     self.table_orders.deadline,
                     self.table_orders.comment,
+                    self.table_orders.reference,
                     self.table_sub_orders.id,
                     self.table_sub_orders.employee,
                     self.table_sub_orders.deadline,
@@ -568,7 +570,6 @@ class Reports(BaseDB):
                 orders = cursor.fetchall()
 
         result = [{k: v for k, v in zip(headers, row)} for row in orders]
-        date_formatter(result)
         self.conn.close()
         return json.dumps(result, default=str)
 

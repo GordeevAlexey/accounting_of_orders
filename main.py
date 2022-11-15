@@ -43,9 +43,11 @@ async def add_order(issue_idx: str = Form(),
                     title: str = Form(),
                     initiator: list = Form(),
                     approving_employee: list = Form(),
+                    employee_order: list = Form(),
                     deadline: str = Form(),
                     comment: str = Form(),
                     reference: str = Form()):
+
 
 
     js = json.dumps({
@@ -56,7 +58,7 @@ async def add_order(issue_idx: str = Form(),
         "initiator": ', '.join(initiator),
         "approving_employee": ', '.join(approving_employee),
         "deadline": deadline,
-        "employee": "Гордеев Алексей Николаевич",
+        "employee": ', '.join(employee_order),
         "comment": comment,
         "reference": reference,
         "status_code": 'На исполнении'
@@ -69,20 +71,20 @@ async def add_order(issue_idx: str = Form(),
 
 @app.post("/add_suborder/{current_order_id}")
 async def add_suborder(current_order_id: str,
-                       employee: list = Form(),
+                       employee_sub_order: list = Form(),
                        deadline: str = Form(),
                        content: str = Form()):
 
     js = json.dumps({
         "id_orders": current_order_id,
-        "employee": ', '.join(employee),
+        "employee": ', '.join(employee_sub_order),
         "deadline": deadline,
         "content": content,
         "status_code": 'На исполнении'
         })
 
     suborder_id = SubOrdersTable().add_suborder(js)
-    users = UsersTable().select_users(employee)
+    users = UsersTable().select_users(employee_sub_order)
     Email.send_info(suborder_id, users, Action.ADD)
 
     return RedirectResponse("/", status_code=303)

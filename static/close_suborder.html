@@ -75,8 +75,6 @@
 
 <body>
 
-
-
     <table id="order_table" style="float: left">
         <tr>
             <td></td>
@@ -108,12 +106,19 @@
             <td><input type="text" id="approving_employee" readonly></td>
         </tr>
         <tr>
+            <td><label for="employee_order">Ответственный исполнитель</label></td>
+            <td><input type="text" id="employee_order" readonly></td>
+        </tr>
+        <tr>
             <td><label for="deadline">Дедлайн</label></td>
             <td><input type="date" id="deadline" readonly></td>
         </tr>
         <tr>
             <td><label for="comment">Коментарии</label></td>
             <td><input type="text" id="comment" readonly></td>
+        </tr>
+        <tr>
+             <td><p><a href="" id="reference">Приказ</a></p></td>
         </tr>
     </table>
 
@@ -124,8 +129,8 @@
             <td><h1 style="text-align: left">Информация о поручении</h1></td>
         </tr>
         <tr>
-            <td><label for="employee">Исполнитель</label></td>
-            <td><input type="text" id="employee" readonly></td>
+            <td><label for="employee_sub_order">Исполнитель</label></td>
+            <td><input type="text" id="employee_sub_order" readonly></td>
         </tr>
         <tr>
             <td><label for="deadline_suborder">Срок исполнения</label></td>
@@ -172,9 +177,11 @@
             $("#title").val(info.title);
             $("#initiator").val(info.initiator);
             $("#approving_employee").val(info.approving_employee);
+            $("#employee_order").val(info.employee_order);
             $("#deadline").val(info.deadline);
             $("#comment").val(info.comment);
-            $("#employee").val(info.employee);
+            $("#reference").attr("href", info.reference);
+            $("#employee_sub_order").val(info.employee_sub_order);
             $("#status_code").val(info.status_code);
             $("#deadline_suborder").val(info.deadline_suborder);
             $("#content").val(info.content);
