@@ -4,11 +4,11 @@ import os
 from dotenv import load_dotenv
 from pypika import Query, Table, Case, functions as fn
 from datetime import datetime, timedelta
-from database.utils import date_formatter
 import json
 from typing import Dict, Any
 import requests
-from database.utils import User, SuborderRow
+from database.utils import User, SuborderRow, date_formatter
+# from utils import User, SuborderRow, date_formatter
 
 #Алиас для json
 JsonDict = Dict[str, Any]
@@ -78,7 +78,7 @@ class OrdersTable(BaseDB):
         finally:
             cursor.close()
 
-    def get_orders_table(self) -> JsonDict:
+    def get_orders_table(self) -> JsonList:
         """Полная выгрузка"""
         headers = OrdersTable()._get_orders_header()
         q = Query.from_(self.table).select(self.table.star)\
@@ -125,7 +125,7 @@ class OrdersTable(BaseDB):
         print(result)
         return json.dumps(result, default=str)
 
-    def get_orders_table(self) -> JsonDict:
+    def get_orders_table(self) -> JsonList:
         """Полная выгрузка"""
         headers = OrdersTable()._get_orders_header()
         q = Query.from_(self.table).select(self.table.star)\
@@ -152,7 +152,7 @@ class OrdersTable(BaseDB):
         self.conn.close()
         return json.dumps(result, default=str)
 
-    def get_orders_report_data(self) -> JsonDict:
+    def get_orders_report_data(self) -> JsonList:
         #Выгрузка по форме отчета
         headers = (
             'id',
@@ -182,8 +182,10 @@ class OrdersTable(BaseDB):
     def add_order(self, row: JsonDict) -> None:
         table = Table("orders")
         row = json.loads(row)
-        # row['approving_date'] = datetime.strptime(row['approving_date'], "%d.%m.%Y").date()
-        # row['deadline'] = datetime.strptime(row['deadline'], "%d.%m.%Y").date()
+        if not row['deadline']:
+            row['deadline'] = datetime.now().date().replace(month=12, day=31)
+        row['approving_date'] = datetime.strptime(row['approving_date'], "%Y-%m-%d").date()
+        row['deadline'] = datetime.strptime(row['deadline'], "%Y-%m-%d").date()
         _columns = row.keys()
         q = Query.into(table).columns(*_columns).insert(*row.values())
         with self.conn:
@@ -223,7 +225,7 @@ class OrdersTable(BaseDB):
         #Обязательно должен быть передан id записи
         data = json.loads(data)
         q = Query.update(self.table).where(self.table.id == data['id'])\
-            .set('update_date', datetime.now())
+            .set('update_date', datetime.now())#.strftime('%d.%m.%Y %H:%M:%S'))
         for key in data:
             q = q.set(key, data[key])
         with self.conn:
@@ -357,6 +359,8 @@ class SubOrdersTable(BaseDB):
         """
         row = json.loads(row)
         _columns = row.keys()
+        if not row['deadline']:
+            row['deadline'] = datetime.now().date().replace(month=12, day=31)
         q = Query.into(self.table).columns(*_columns).insert(*row.values())
         with self.conn:
             with self.conn.cursor() as cursor:
@@ -570,58 +574,10 @@ class Reports(BaseDB):
                 orders = cursor.fetchall()
 
         result = [{k: v for k, v in zip(headers, row)} for row in orders]
+        result = list(map(date_formatter, result))
         self.conn.close()
         return json.dumps(result, default=str)
 
 if __name__ == "__main__":
     # BaseDB().create_tables()
     UsersTable().update_users_table()
-    add_order_row = json.dumps({
-        'issue_type': 'Приказ',
-        'issue_idx': '666',
-        'approving_date': '19.10.2022',
-        'title': "ТЕСТ1",
-        'initiator': 'Сидорович Никита Сергеевич',
-        'approving_employee':'Сидорович Никита Сергеевич',
-        'deadline': '11.11.2022',
-        'status_code': 'На исполнении',
-        'comment': 'какой-то коммент',
-        'reference': r'C:\Users\sidorovich_ns\Desktop\Projects\accounting_of_orders\income\Приказ_продажа монет кассовым работником.doc',
-    })
-    # OrdersTable().add_order(add_order_row)
-
-    update_order_row = json.dumps({
-        'id': '73c823aa-0310-40ae-bd2f-af3010498f44',
-        'title': "Об актуализации плана  реализации проекта  по использованию биометрической идентификации при обслуживании физических лиц",
-        'comment': 'Обновлено 01.09.2022',
-        'deadline': '01.09.2022',
-    })
-    id_order = '41510fef-e109-4b54-93aa-db8b3bdeba3e'.encode('utf-8')
-        # OrdersTable().add_order(add_order_row)
-        # print(OrdersTable().get_orders_table())
-        # print(OrdersTable()._get_orders_header())
-    # OrdersTable().update_order(update_order_row)
-    # print(OrdersTable()._get_deleted_orders_rows())
-
-    add_suborder_row = json.dumps({
-        'id_orders': "f1d367bc-176f-49bb-8a59-4f70a3133021",
-        'employee': "Сидорович Никита Сергеевич",
-        'deadline': '12.11.2022',
-        'content': 'Что-то еще',
-        'status_code': 'На исполнении',
-        'comment': 'Новая подзадача',
-    })
-
-    # SubOrdersTable().add_suborder(add_suborder_row)
-
-    update_suborder_row = json.dumps({
-        'id_orders': '41510fef-e109-4b54-93aa-db8b3bdeba3e',
-        'id': '74e9fe3f-2ef5-4c35-9310-17cea65ad0dd',
-        'content': 'Обновленное содержание',
-        'comment': 'Обновлено 01.09.2022',
-        'deadline': '01.09.2022',
-    })
-    suborder_id = '85657f88-07c4-49e5-a450-eaf6bb6d1d6b'
-
-    # SubOrdersTable().delete_suborder_row(id_order.decode('utf-8'), suborder_id)
-    # SubOrdersTable().update_suborder(update_suborder_row)

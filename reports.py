@@ -5,7 +5,12 @@ import json
 from datetime import datetime, timedelta
 from pypika import Query, Table, Case, functions as fn
 from database.utils import *
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import NamedStyle
+from send_email import Email
+
 
 #ПОКА ЭТОТ КЛАСС НЕ ИСПОЛЬЗОВАТЬ, ПОКА НЕ СОГЛАСЮТ ШАБЛОН ОТЧЕТА 01.09.2022
 class OrderReport:
@@ -87,16 +92,55 @@ class OrderReport:
         self.output.seek(0)
 
 
-class WeeklyReportData:
-    def __init__(self) -> None:
-        # self.report_date= datetime.today()
-        # if self.report_date.weekday() == 4:
-        #     self.end_report_period = self.report_date - timedelta(days=7)
-        #     self.start_report_period = self.end_report_period - timedelta(days=4)
-        # else:
-        #     self.start_report_period = self.end_report_period = None
-        self.start_report_period = "2022-11-09"
-        self.end_report_period = "2022-11-11"
+class ExecutedOfThePeriodData:
+    """
+    Осуществляет выборку исполненных ВРД за период из БД
+    """
+    def __init__(self, start_period: datetime, end_period: datetime):
+        self.start_period = start_period
+        self.end_period = end_period
+
+    def get_executed_orders(self):
+        orders_table = Table('orders')
+        suborders_table = Table('suborders')
+        q = Query.from_(suborders_table).select(
+            suborders_table.id_orders,
+            suborders_table.content,
+            suborders_table.deadline,
+            suborders_table.status_code,
+            suborders_table.comment
+        ).where(
+            (suborders_table.deleted == False) &
+            (suborders_table.close_date[self.start_period:self.end_period])
+        )
+        result = SubOrdersTable().execute_query(str(q))
+        print(result)
+
+
+class ExecutedOfThePeriod:
+    def __init__(self, start_period: datetime, end_period: datetime, wb: Workbook) -> None:
+        self.start_period = start_period
+        self.end_period = end_period
+        self.wb = wb
+        self.wb.create_sheet("Исполненные за период")
+    
+    def _data_to_sheet(self) -> None:
+        pass
+
+    def _apply_styles(self) -> None:
+        pass
+
+    def form(self) -> bytes:
+        pass
+
+
+class ApprovedPeriodData:
+    """
+    Осуществляет выборку утвержденных ВРД за период из БД
+    """
+    def __init__(self, start_eriod: datetime, end_period: datetime) -> None:
+        self.start_report_period = start_eriod
+        self.end_report_period = end_period
 
     def _get_orders(self) -> list[ReportRow]:
         orders_table = Table('orders')
@@ -128,12 +172,12 @@ class WeeklyReportData:
                 suborders_table.status_code,
                 suborders_table.comment
         ).where(
-            suborders_table.id_orders.isin(orders_ids)
+            (suborders_table.id_orders.isin(orders_ids)) &
+            (suborders_table.deleted == False)
         )
         suborders = SubOrdersTable().execute_query(str(q))
         report_rows = []
         for order in orders:
-            print(order)
             report_rows.append(order)
             for suborder in suborders:
                 report_rows.append(
@@ -142,12 +186,17 @@ class WeeklyReportData:
                         status_code=suborder[2], comment=suborder[3],
                         issue_type='Поручение', issue_idx=order.issue_idx,
                         id=None, approving_date=None, initiator=None,
-                        approving_employee=None
+                        approving_employee=None, employee=order.employee
                         )
                 )
         return report_rows
 
-class Report:
+
+class ApprovedForThePeriod:
+    """
+    Отчет об утвержденных за период ВРД
+    """
+
     header = (
        'Вид поручения',
        '№',
@@ -157,34 +206,107 @@ class Report:
        'Утверждающий руководитель',
        'Ответственные исполнители',
        'Срок исполнения',
-       'Содержание поручения',
-       'Отметка об исполнении',
        'Статус поручения',
+       'Содержание поручения',
        'Дата закрытия',
        'Примечание',
     )
+    header_width = (17, 13, 23, 43, 40, 40, 40, 18, 45, 40, 18, 35)
 
-    def __init__(self) -> None:
-        self.rows = WeeklyReportData().report_rows()
-        self.wb = Workbook()
+    def __init__(self, start_period: datetime, end_period: datetime, wb: bytes) -> None:
+        self.output = BytesIO()
+        self.apd = ApprovedPeriodData(start_period, end_period)
+        self.srp = datetime.strptime(start_period, "%Y-%m-%d").strftime("%d.%m.%Y")
+        self.erp = datetime.strptime(end_period, "%Y-%m-%d").strftime("%d.%m.%Y")
+        self.rows = self.apd.report_rows()
+        # self.wb = Workbook()
+        self.wb = load_workbook(wb)
         self.ws = self.wb.active
+        self.ws.title = "Утвержденные за период"
 
     def _data_to_sheet(self):
+        self.ws["A1"] = f"Внутренние распорядительные документы, утвержденные в период с {self.srp} по {self.erp}"
+        self.ws["B2"] = '- без установленных сроков'
+        self.ws["B3"] = '- на исполнении'
+        self.ws["B4"] = '- исполнени'
+        self.ws['B5'] = None
         self.ws.append(self.header)
         [self.ws.append(row[1:]) for row in self.rows]
 
+        for col in [f'C7:C{self.ws.max_row}', f'H7:H{self.ws.max_row}', f'K7:K{self.ws.max_row}']:
+            for cell in self.ws[col]:
+                cell[0].style = NamedStyle(name='datetime', number_format='DD.MM.YYYY')
+
     def _apply_styles(self):
-        pass
-
-    def save_sheet(self):
-        self._data_to_sheet()
-        self.wb.save("Отчет.xlsx")
-
-
-
-
-# print(WeeklyReport().report_date)
-# print(WeeklyReport().start_report_period)
-# print(WeeklyReport().end_report_period)
-Report().save_sheet()
+        #TODO: разукрасить по статусу исполнения
+        self.ws.merge_cells('A1:L1')
+        self.ws['A1'].alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        self.ws['A1'].font = Font(name='Times New Roman', size=12, bold=True)
+        self.ws.auto_filter.ref = "A6:L6"
+        thin = Side(border_style="thin", color="000000")
+        border = Border(top=thin, left=thin, right=thin, bottom=thin)
         
+        for cell in ('A2', 'A3', 'A4'):
+            self.ws[cell].border = border
+        self.ws['A2'].fill = PatternFill(fill_type='solid', fgColor="D7E4BC")
+        self.ws['A3'].fill = PatternFill(fill_type='solid', fgColor="E6B9B8")
+        self.ws['A4'].fill = PatternFill(fill_type='solid', fgColor="8DB4E3")
+
+        for cell in self.ws['6:6']:
+            cell.fill = PatternFill(fill_type='solid', fgColor="DBE5F1")
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.font = Font(name='Times New Roman', size=12, bold=True)
+            cell.border = border
+            
+        for row in self.ws.iter_rows(min_row=7):
+            for col_idx, cell in enumerate(row, 1):
+                self.ws.column_dimensions[get_column_letter(col_idx)].width = self.header_width[col_idx - 1] 
+                cell.font = Font(name='Times New Roman', size=12, bold=False)
+                cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+                cell.border = border
+
+    def form(self) -> bytes:
+        self._data_to_sheet()
+        self._apply_styles()
+        self.wb.save(self.output)
+        return self.output.getvalue()
+
+class WeeklyReport:
+    def __init__(self) -> None:
+        #TODO Не забыть расскоментить)
+        # self.report_date= datetime.today()
+        # if self.report_date.weekday() == 4:
+        #     self.end_report_period = self.report_date - timedelta(days=14)
+        #     self.start_report_period = self.end_report_period - timedelta(days=4)
+        # else:
+        #     self.start_report_period = self.end_report_period = None
+        self.start_report_period = "2022-11-09"
+        self.end_report_period = "2022-11-11"
+        self.output = BytesIO()
+        self.wb = Workbook()
+
+    def form_approved_for_the_period(self) -> None:
+        self.wb.save(self.output)
+        approved_period = ApprovedForThePeriod(
+            self.start_report_period,
+            self.end_report_period,
+            self.output.getvalue()).form()
+        self.wb = load_workbook(approved_period)
+
+    def form_executed_for_the_period(self) -> bytes:
+        return ExecutedOfThePeriod(
+            self.start_report_period,
+            self.end_report_period,
+            self.wb
+        ).form()
+
+    def send_report(self) -> None:
+        Email.send_weekly_report(
+            f"""Отчет об исполнении за период {self.srp} - {self.erp}\n\n"""
+            """*Данное сообщение сформированно автоматическе. Не нжуно на него отвечать.\n\n""",
+            f"weekly_report {self.srp}-{self.erp}",
+            self.form_executed_for_the_period()
+        )
+
+# WeeklyReport().send_report()
+ExecutedOfThePeriodData("2022-11-09", "2022-11-11").get_executed_orders()

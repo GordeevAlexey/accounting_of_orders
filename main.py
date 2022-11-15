@@ -182,6 +182,20 @@ async def start_reminder():
     return {"Scheduled": True,"JobID": reminder_job.id}
 
 
+@app.post("/weekly_report/", tags=["weekly_report"])
+async def start_weekly_report():
+    print("Планировщик еженедельного отчета создан")
+    trigger = CronTrigger(day_of_week='fri', hour=14, minute=30)
+
+    weekly_report_job = scheduler.add_job(
+        Reminder().remind_to_employee,
+        trigger=trigger,
+        id="weekly_report",
+        replace_existing=True,
+    )
+    return {"Scheduled": True,"JobID": weekly_report_job.id}
+
+
 @app.delete("/reminder/delete/", tags=["reminder"])
 async def delete_reminder():
     print("Планировщик удален")
@@ -200,8 +214,8 @@ async def delete_reminder():
 
 if __name__ == "__main__":
     uvicorn.run("main:app",
-                # host="192.168.200.92",
-                host="192.168.200.168",
+                host="192.168.200.92",
+                # host="192.168.200.168",
                 # headers=[('server', 'top4ik')],
                 port=8004,
                 reload=True)
