@@ -174,7 +174,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
-                result = [{k: v for k,v in zip(headers, row)} for row in orders]
+                result = [{k: v for k, v in zip(headers, row)} for row in orders]
                 result = list(map(date_formatter, result))
         cursor.close()
         return json.dumps(result)

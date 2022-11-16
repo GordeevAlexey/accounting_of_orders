@@ -34,7 +34,7 @@ class IBSO(ABC):
     @abstractmethod
     def _get_data_from_db(self, query: str) -> pd.DataFrame:
         query = self._get_query()
-        return pd.read_sql(query ,con=self.conn)
+        return pd.read_sql(query, con=self.conn)
 
 
 class Employees(IBSO):

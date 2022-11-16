@@ -40,7 +40,7 @@
             font-variant: small-caps;
             }
 
-            .btn, input, select {
+            .input_css, select {
                 font-variant: small-caps;
                 width:400px;
                 padding:25px;
@@ -124,18 +124,18 @@
 <body>
 <div id="orders_manual">
     <h1>Реестр документов</h1>
-    <input type="button" value="Добавить документ" onclick="showModalWin('add_order')">
+    <input type="button" class="input_css" value="Добавить документ" onclick="showModalWin('add_order')">
 <!--    <input type="button" value="Удалить документ" onclick="showModalWin()">-->
 </div>
 
 <div id="orders"></div>
 <div id="suborders_manual" hidden>
     <h1>Реестр поручений</h1>
-    <input id="add_task" type="button" value="Добавить поручение" onclick="showModalWin('add_suborder')">
-    <input id="close_task" type="button" value="Закрыть поручение" onclick="showModalWin('close_suborder')" hidden>
+    <input id="add_task" class="input_css" type="button" value="Добавить поручение" onclick="showModalWin('add_suborder')">
+    <input id="close_task" class="input_css" type="button" value="Закрыть поручение" onclick="showModalWin('close_suborder')" hidden>
     <br>
-    <input id="update_suborder_btn" type="button" value="Редактировать поручение" onclick="showModalWin('update_suborder')" hidden>
-    <input id="delete_suborder_btn" type="button" value="Удалить поручение" onclick="deleteSuborder()" hidden>
+    <input id="update_suborder_btn" class="input_css" type="button" value="Редактировать поручение" onclick="showModalWin('update_suborder')" hidden>
+    <input id="delete_suborder_btn" class="input_css" type="button" value="Удалить поручение" onclick="deleteSuborder()" hidden>
 
 </div>
 
@@ -146,9 +146,9 @@
             <option value="Приказ" selected>Приказ</option>
             <option value="Распоряжение" selected>Распоряжение</option>
         </select>
-        <input name="issue_idx" type="text" placeholder="Номер №">
-        <input name="approving_date" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Дата утверждения">
-        <input name="title" type="text" placeholder="Тема">
+        <input name="issue_idx" class="input_css" type="text" placeholder="Номер №">
+        <input name="approving_date" class="input_css" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Дата утверждения">
+        <input name="title" class="input_css" type="text" placeholder="Тема">
 
         <select class="initiator" name="initiator" id="initiator" multiple="multiple"></select>
         <br><br>
@@ -156,20 +156,20 @@
         <br><br>
         <select class="employee_order" name="employee_order" id="employee_order" multiple="multiple"></select>
 
-        <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Срок исполнения">
-        <input name="comment" type="text" placeholder="Примечание">
-        <input name="reference" type="link" placeholder="Ссылка">
+        <input name="deadline" class="input_css" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Срок исполнения">
+        <input name="comment" class="input_css" type="text" placeholder="Примечание">
+        <input name="reference" class="input_css" type="link" placeholder="Ссылка">
 
-        <input type="submit" name="submit" value="Сохранить">
+        <input type="submit" class="input_css" name="submit" value="Сохранить">
     </form>
 </div>
 
 <div style="text-align: center" id="add_suborder" class="modalwin">
     <form id="add_suborder_form" action="" method="post" onsubmit="return addActionForm('add_suborder_form', 'add_suborder');">
         <select name="employee_sub_order" id="employee_sub_order" multiple="multiple"></select>
-        <input name="deadline" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Исполнить до...">
+        <input name="deadline" class="input_css" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Исполнить до...">
         <textarea name="content" type="text" placeholder="Описание поручения"></textarea>
-        <input type="submit" name="submit" value="Сохранить">
+        <input type="submit" class="input_css" name="submit" value="Сохранить">
 <!--        <input name="current_order_id1" id="current_order_id1" type="text" hidden>-->
     </form>
 </div>
@@ -177,16 +177,16 @@
 <div style="text-align: center" id="close_suborder" class="modalwin">
     <form action="" id="close_suborder_form" method="post" onsubmit="return addActionForm('close_suborder_form', 'close_suborder');">
         <textarea name="comment_suborder" id="comment_suborder" type="text" placeholder="Комментарии"></textarea>
-        <input type="submit" name="submit" value="Закрыть">
+        <input type="submit" class="input_css" name="submit" value="Закрыть">
     </form>
 </div>
 
 <div style="text-align: center" id="update_suborder" class="modalwin">
     <form id="update_suborder_form" action="" method="post" onsubmit="return addActionForm('update_suborder_form', 'update_suborder');">
         <select name="employee_up" id="employee_up" multiple="multiple"></select>
-        <input name="deadline_up" id="deadline_up" type="date">
+        <input name="deadline_up" class="input_css" id="deadline_up" type="date">
         <textarea name="content_up" id="content_up" type="text" placeholder="Описание поручения"></textarea>
-        <input name="submit_up" id="submit_up" type="submit" value="Обновить">
+        <input name="submit_up" class="input_css" id="submit_up" type="submit" value="Обновить">
     </form>
 </div>
 
@@ -229,21 +229,21 @@ $(document).ready(function() {
         data: JSON.parse(response),
         layout: 'fitColumns',
         columns: [
-                    { title: 'Вид поручения', field: 'issue_type' },
-                    { title: 'Номер №', field: 'issue_idx', headerFilter: "input" },
-                    { title: 'Дата утверждения', field: 'approving_date', headerFilter: "input"},
-                    { title: 'Тема', field: 'title', headerFilter: "input"},
-                    { title: 'Инициатор', field: 'initiator', headerFilter: "input" },
-                    { title: 'Утверждающий руководитель', field: 'approving_employee', headerFilter: "input" },
-                    { title: 'Ответственный исполнитель', field: 'employee', headerFilter: "input"},
-                    { title: 'Cтатус', field: 'status_code', headerFilter: "input"},
-                    { title: 'Прогресс', field: 'progress', sorter: 'number', formatter: 'progress', editorParams:{min:1, max:100}},
-                    { title: 'Срок исполнения', field: 'deadline', headerFilter: "input" },
-                    { title: 'Примечание', field: 'comment' },
-                    { title: 'Ссылка', field: 'reference', formatter:"link", formatterParams : {
-                        target:"_blank",
-                        url:link ,
-                    } }
+                    { title: 'Вид поручения',             field: 'issue_type',          headerFilter: "input"},
+                    { title: 'Номер №',                   field: 'issue_idx',           headerFilter: "input"},
+                    { title: 'Дата утверждения',          field: 'approving_date',      headerFilter: "input"},
+                    { title: 'Тема',                      field: 'title',               headerFilter: "input"},
+                    { title: 'Инициатор',                 field: 'initiator',           headerFilter: "input"},
+                    { title: 'Утверждающий руководитель', field: 'approving_employee',  headerFilter: "input"},
+                    { title: 'Ответственный исполнитель', field: 'employee',            headerFilter: "input"},
+                    { title: 'Cтатус',                    field: 'status_code',         headerFilter: "input"},
+                    { title: 'Прогресс',                  field: 'progress', sorter: 'number', formatter: 'progress', editorParams:{min:1, max:100}},
+                    { title: 'Срок исполнения',           field: 'deadline',            headerFilter: "input"},
+                    { title: 'Примечание',                field: 'comment',             headerFilter: "input"},
+                    { title: 'Ссылка',                    field: 'reference',           headerFilter: "input",
+                      formatter:"link", formatterParams : {
+                                                            target:"_blank",
+                                                            url:link } }
                  ],
 
         rowClick:function(e, row){
@@ -313,8 +313,8 @@ function fillingUpdatingFields(row) {
 
     let myDate = row.getData().deadline;
     let str = myDate.replace(/(\d+)\.(\d+)\.(\d+)/, '$3-$2-$1');
-    $("#deadline_up").val(str).change();
 
+    $("#deadline_up").val(str).change();
     $("#content_up").val(row.getData().content);
 }
 
@@ -389,102 +389,19 @@ function deleteSuborder() {
 
 </script>
 
+
+<a href="#" onclick="reload_confirm(); return false;">
+	Обновить страницу
+</a>
+
 <script>
-
-    //custom max min header filter
-var minMaxFilterEditor = function(cell, onRendered, success, cancel, editorParams){
-
-    var end;
-
-    var container = document.createElement("span");
-
-    //create and style inputs
-    var start = document.createElement("input");
-    start.setAttribute("type", "number");
-    start.setAttribute("placeholder", "Min");
-    start.setAttribute("min", 0);
-    start.setAttribute("max", 100);
-    start.style.padding = "25px";
-    start.style.width = "25%";
-    start.style.boxSizing = "border-box";
-
-    start.value = cell.getValue();
-
-    function buildValues(){
-        success({
-            start:start.value,
-            end:end.value,
-        });
-    }
-
-    function keypress(e){
-        if(e.keyCode == 13){
-            buildValues();
-        }
-
-        if(e.keyCode == 27){
-            cancel();
-        }
-    }
-
-    end = start.cloneNode();
-    end.setAttribute("placeholder", "Max");
-
-    start.addEventListener("change", buildValues);
-    start.addEventListener("blur", buildValues);
-    start.addEventListener("keydown", keypress);
-
-    end.addEventListener("change", buildValues);
-    end.addEventListener("blur", buildValues);
-    end.addEventListener("keydown", keypress);
-
-
-    container.appendChild(start);
-    container.appendChild(end);
-
-    return container;
- }
-
-//custom max min filter function
-function minMaxFilterFunction(headerValue, rowValue, rowData, filterParams){
-    //headerValue - the value of the header filter element
-    //rowValue - the value of the column in this row
-    //rowData - the data for the row being filtered
-    //filterParams - params object passed to the headerFilterFuncParams property
-
-        if(rowValue){
-            if(headerValue.start != ""){
-                if(headerValue.end != ""){
-                    return rowValue >= headerValue.start && rowValue <= headerValue.end;
-                }else{
-                    return rowValue >= headerValue.start;
-                }
-            }else{
-                if(headerValue.end != ""){
-                    return rowValue <= headerValue.end;
-                }
-            }
-        }
-
-    return true; //must return a boolean, true if it passes the filter.
+function reload_confirm(){
+	if (confirm('Вы действительно хотите обновить страницу?')) {
+		$("#suborders").refreshData(true)
+	}
 }
+</script>
 
-
-var table = new Tabulator("#example-table", {
-    height:"311px",
-    layout:"fitColumns",
-    columns:[
-        {title:"Name", field:"name", width:150, headerFilter:"input"},
-        {title:"Progress", field:"progress", width:150, formatter:"progress", sorter:"number", headerFilter:minMaxFilterEditor, headerFilterFunc:minMaxFilterFunction, headerFilterLiveFilter:false},
-        {title:"Gender", field:"gender", editor:"list", editorParams:{values:{"male":"Male", "female":"Female", clearable:true}}, headerFilter:true, headerFilterParams:{values:{"male":"Male", "female":"Female", "":""}, clearable:true}},
-        {title:"Rating", field:"rating", editor:"star", hozAlign:"center", width:100, headerFilter:"number", headerFilterPlaceholder:"at least...", headerFilterFunc:">="},
-        {title:"Favourite Color", field:"col", editor:"input", headerFilter:"list", headerFilterParams:{valuesLookup:true, clearable:true}},
-        {title:"Date Of Birth", field:"dob", hozAlign:"center", sorter:"date",  headerFilter:"input"},
-        {title:"Driver", field:"car", hozAlign:"center", formatter:"tickCross",  headerFilter:"tickCross",  headerFilterParams:{"tristate":true},headerFilterEmptyCheck:function(value){return value === null}},
-    ],
-});
-
-</script>>
 
 </body>
 
