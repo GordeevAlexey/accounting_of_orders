@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import json
 from typing import Dict, Any
 import requests
-from database.utils import User, SuborderRow, date_formatter
+from database.utils import User, date_formatter
 # from utils import User, SuborderRow, date_formatter
 
 #Алиас для json
@@ -389,10 +389,7 @@ class SubOrdersTable(BaseDB):
         delay_date = datetime.today() + timedelta(days=days)
         cols = (
             'id',
-            # 'id_orders',
             'employee',
-            # 'content',
-            # 'deadline'
         )
         q = Query.from_(self.table).select(*cols)\
             .where(
