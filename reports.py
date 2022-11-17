@@ -1,7 +1,5 @@
-import xlsxwriter
 from io import BytesIO
 from database.pg_db import OrdersTable, SubOrdersTable
-import json
 from datetime import datetime, timedelta
 from pypika import Query, Table
 from database.utils import *
@@ -53,14 +51,6 @@ REPORT_HEADER = (
 
 REPORT_HEADER_WIDTH = (17, 13, 23, 43, 40, 40, 40, 18, 45, 40, 18, 35)
 
-@dataclass(frozen=True, slots=True)
-class SuborderRow:
-    id_orders: str
-    id: str
-    employee: str | None
-    deadline: str | None
-    content: str | None
-
 
 class ReportOrderRow(NamedTuple):
     id: Optional[str] = None
@@ -94,85 +84,6 @@ def rawrows_to_reportrows(headers: tuple, rows: list[tuple], row_type: Any) -> t
     rows = map(date_formatter, [{k: v for k, v in zip(headers, row)} for row in rows])
     rows = tuple(row_type(**row) for row in rows) 
     return rows
-
-#ПОКА ЭТОТ КЛАСС НЕ ИСПОЛЬЗОВАТЬ, ПОКА НЕ СОГЛАСЮТ ШАБЛОН ОТЧЕТА 01.09.2022
-class OrderReport:
-    #https://stackoverflow.com/questions/63465155/how-to-return-xlsx-file-from-memory-in-fastapi
-    title = f'ВРД\n АО "БАНК АКЦЕПТ {datetime.now().year}"'
-    header = {
-       'issue_type': 'Вид поручения',
-       'issue_idx': '№',
-       'approving_date': 'Дата утверждения',
-       'title': 'Тема',
-       'initiator': 'Инициатор',
-       'approving_employee': 'Утверждающий руководитель',
-       'employee': 'Ответственные исполнители',
-       'deadline': 'Срок исполнения',
-       'content': 'Содержание поручения',
-       'performance_note': 'Отметка об исполнении',
-       'status_code': 'Статус поручения',
-       'closa_date': 'Дата закрытия',
-       'comment': 'Примечание',
-    }
-    header_width = (12, 18, 18, 20, 20, 17, 14, 13, 29, 18, 18, 18, 18,)
-
-    def __init__(self):
-        self.output = BytesIO()
-        self.workbook = xlsxwriter.Workbook(self.output)
-        self.worksheet = self.workbook.add_worksheet('Краткосрочные документы')
-        self.title_merge_format = self.workbook.add_format({
-                'bold': 1,
-                'border': 1,
-                'align': 'center',
-                'valign': 'vcenter',
-        })
-        self.header_format = self.workbook.add_format({
-                'bold': 1,
-                'border': 1,
-                'align': 'center',
-                'valign': 'vcenter',
-                'fg_color': '#dce6f1',
-                'text_wrap': 'true'
-        })
-        self.cell_format = self.workbook.add_format({
-                'align': 'center',
-                'valign': 'vcenter',
-                'text_wrap': 'true'
-        })
-
-    def _create_template(self) -> None:
-        self.worksheet.merge_range('A1:M3', self.title, self.title_merge_format)
-        for col_idx, values in enumerate(zip(self.header.values(), self.header_width)):
-            cell_value, width = values 
-            self.worksheet.write(3, col_idx, cell_value, self.header_format)
-            self.worksheet.set_column(col_idx, col_idx, width, self.cell_format)
-        self.worksheet.autofilter('A4:M4')
-
-    def _add_data_from_db(self) -> None:
-        from pprint import pprint
-        self._create_template()
-        orders_rows = json.loads(OrdersTable().get_orders_report_data())
-        pprint(orders_rows)
-
-        orders_id = [row['id'] for row in orders_rows]
-        suborders_rows = []
-
-        for id in orders_id:
-            suborders_rows.append(*json.loads(SubOrdersTable()\
-                .get_suborders_report_data(id.encode('utf-8'))))
-        print(suborders_rows)
-
-
-
-        # for row_idx, row in enumerate(rows, 4):
-        #     self.worksheet.write(row_idx, 0, row_idx - 3, self.cell_format)
-        #     for col_idx, cell in enumerate(row.values()):
-        #         self.worksheet.write(row_idx, col_idx + 1, cell, self.cell_format)
-    
-    def get_report(self) -> None:
-        self._add_data_from_db()
-        self.workbook.close()
-        self.output.seek(0)
 
 
 class ExecutedOfThePeriodData:
@@ -221,12 +132,14 @@ class ExecutedOfThePeriodData:
         ).where(
             self.orders_table.id.isin(orders_id)
         )
-        try:
-            orders = rawrows_to_reportrows(ORDERS_HEADER, OrdersTable().execute_query(str(q)), ReportOrderRow)
-        #тут надо что-то придумать, как доджить это исключение
-        except psycopg2.errors.SyntaxError as e:
-            print(f"Скорее всего за период {self.start_period} - {self.end_period} данных не найдено! Ошибка -> {str(e)}")
-            # raise Exception(f"Скорее всего за период {self.start_period} - {self.end_period} данных не найдено! Ошибка -> {str(e)}")
+        orders = rawrows_to_reportrows(ORDERS_HEADER, OrdersTable().execute_query(str(q)), ReportOrderRow)
+        # try:
+        #     orders = rawrows_to_reportrows(ORDERS_HEADER, OrdersTable().execute_query(str(q)), ReportOrderRow)
+        # #тут надо что-то придумать, как доджить это исключение
+        # except psycopg2.errors.SyntaxError as e:
+        #     print(f"Скорее всего за период {self.start_period} - {self.end_period} данных не найдено! Ошибка -> {str(e)}")
+        #     orders, suborders = [ReportOrderRow()], [ReportSuborderRow]
+        #     # raise Exception(f"Скорее всего за период {self.start_period} - {self.end_period} данных не найдено! Ошибка -> {str(e)}")
         return orders, suborders
 
 
@@ -455,15 +368,14 @@ class ApprovedForThePeriod:
 
 class WeeklyReport:
     def __init__(self) -> None:
-        #TODO Не забыть расскоментить)
-        # self.report_date= datetime.today()
-        # if self.report_date.weekday() == 4:
-        #     self.end_report_period = self.report_date - timedelta(days=14)
-        #     self.start_report_period = self.end_report_period - timedelta(days=4)
-        # else:
-        #     self.start_report_period = self.end_report_period = None
-        self.start_report_period = "2022-11-09"
-        self.end_report_period = "2022-11-10"
+        self.report_date= datetime.today()
+        if self.report_date.weekday() == 4:
+            self.end_report_period = self.report_date - timedelta(days=14)
+            self.start_report_period = self.end_report_period - timedelta(days=4)
+        else:
+            self.start_report_period = self.end_report_period = None
+        # self.start_report_period = "2022-11-09"
+        # self.end_report_period = "2022-11-10"
         self.srp = datetime.strptime(self.start_report_period, "%Y-%m-%d").strftime("%d.%m.%Y")
         self.erp = datetime.strptime(self.end_report_period, "%Y-%m-%d").strftime("%d.%m.%Y")
         self.output = BytesIO()
@@ -493,5 +405,3 @@ class WeeklyReport:
             f"weekly_report {self.srp}-{self.erp}",
             self.form_executed_for_the_period()
         )
-
-WeeklyReport().send_report()
