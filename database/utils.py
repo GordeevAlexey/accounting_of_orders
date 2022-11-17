@@ -1,7 +1,7 @@
 from uuid import uuid4
 from dataclasses import dataclass, asdict
 from datetime import datetime
-from typing import NamedTuple, Any
+from typing import NamedTuple, Any, Optional
 from enum import Enum
 
 
@@ -62,29 +62,6 @@ class Action(str, Enum):
     DELETE = "delete"
     CLOSE = "close"
     DELAY = "delay"
-    
-
-@dataclass(frozen=True, slots=True)
-class SuborderRow:
-    id_orders: str
-    id: str
-    employee: str | None
-    deadline: str | None
-    content: str | None
-
-
-class ReportRow(NamedTuple):
-    id: str
-    issue_type: str
-    issue_idx: int
-    approving_date: datetime
-    title: str
-    initiator: str
-    approving_employee: str
-    employee: str
-    deadline: datetime
-    status_code: str
-    comment: str
 
 
 def date_formatter(json: dict[str, Any]) -> None:

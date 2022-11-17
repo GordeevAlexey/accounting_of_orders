@@ -17,6 +17,7 @@ from reminder_schedule import Reminder
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.combining import OrTrigger
+from reports import WeeklyReport
 
 
 app = FastAPI()
@@ -182,18 +183,25 @@ async def start_reminder():
     return {"Scheduled": True,"JobID": reminder_job.id}
 
 
-@app.post("/weekly_report/", tags=["weekly_report"])
+@app.post("/weekly_report/start", tags=["weekly_report"])
 async def start_weekly_report():
     print("Планировщик еженедельного отчета создан")
     trigger = CronTrigger(day_of_week='fri', hour=14, minute=30)
 
     weekly_report_job = scheduler.add_job(
-        Reminder().remind_to_employee,
+        WeeklyReport().send_report,
         trigger=trigger,
         id="weekly_report",
         replace_existing=True,
     )
     return {"Scheduled": True,"JobID": weekly_report_job.id}
+
+
+@app.delete("/weekly_report/delete/", tags=["weekly_report"])
+async def delete_reminder():
+    print("Планировщик удален")
+    scheduler.remove_job("weekly_report")
+    return {"Scheduled": False,"JobID": "weekly_report"}
 
 
 @app.delete("/reminder/delete/", tags=["reminder"])
