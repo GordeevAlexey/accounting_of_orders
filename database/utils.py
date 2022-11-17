@@ -1,7 +1,5 @@
-from uuid import uuid4
-from dataclasses import dataclass, asdict
 from datetime import datetime
-from typing import NamedTuple, Any, Optional
+from typing import NamedTuple, Any
 from enum import Enum
 
 
@@ -64,7 +62,7 @@ class Action(str, Enum):
     DELAY = "delay"
 
 
-def date_formatter(json: dict[str, Any]) -> None:
+def date_formatter(json: dict[str, Any]) -> dict:
     if not json:
         return {}
     for key, value in json.items():

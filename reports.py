@@ -7,9 +7,8 @@ from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
 from openpyxl.utils import get_column_letter
 from send_email import Email
+from typing import Optional
 import psycopg2
-
-    
 
 SUBORDERS_HEADER = (
     "id_orders",
@@ -69,20 +68,20 @@ class ReportOrderRow(NamedTuple):
 class ReportSuborderRow(NamedTuple):
     id: Optional[str] = None
     id_orders: Optional[str] = None
-    content: Optional[str] =None
+    content: Optional[str] = None
     deadline: Optional[datetime] = None
     status_code: Optional[str] = None
     employee: Optional[str] = None
     comment: Optional[str] = None
     close_date: Optional[str] = None
-    
+
 
 def rawrows_to_reportrows(headers: tuple, rows: list[tuple], row_type: Any) -> tuple[Any]:
     """
     Преобразует строки из бд в ReoportRow
     """
     rows = map(date_formatter, [{k: v for k, v in zip(headers, row)} for row in rows])
-    rows = tuple(row_type(**row) for row in rows) 
+    rows = tuple(row_type(**row) for row in rows)
     return rows
 
 
@@ -115,20 +114,20 @@ class ExecutedOfThePeriodData:
 
     def get_data(self) -> tuple[tuple[Any]]:
         suborders = self._get_executed_suborders()
-        #Тут множество надо понаблюдать за порядком id_orders
+        # Тут множество надо понаблюдать за порядком id_orders
         orders_id = {row.id_orders for row in suborders}
         q = Query.from_(self.orders_table).select(
-                self.orders_table.id,
-                self.orders_table.issue_type,
-                self.orders_table.issue_idx,
-                self.orders_table.approving_date,
-                self.orders_table.title,
-                self.orders_table.initiator,
-                self.orders_table.approving_employee,
-                self.orders_table.employee,
-                self.orders_table.deadline,
-                self.orders_table.status_code,
-                self.orders_table.comment
+            self.orders_table.id,
+            self.orders_table.issue_type,
+            self.orders_table.issue_idx,
+            self.orders_table.approving_date,
+            self.orders_table.title,
+            self.orders_table.initiator,
+            self.orders_table.approving_employee,
+            self.orders_table.employee,
+            self.orders_table.deadline,
+            self.orders_table.status_code,
+            self.orders_table.comment
         ).where(
             self.orders_table.id.isin(orders_id)
         )
@@ -159,14 +158,15 @@ class ExecutedOfThePeriod:
             _fill = PatternFill(fill_type='solid', fgColor="E6B9B8")
             for col_idx in range(1, self.ws.max_column + 1):
                 self.ws.cell(row_idx, col_idx).fill = _fill
-    
+
     def _data_to_sheet(self) -> None:
         orders, suborders = ExecutedOfThePeriodData(self.start_period, self.end_period).get_data()
-        self.ws["A1"] = f"Внутренние распорядительные документы со сроками исполнения в период с {self.srp} по {self.erp}"
+        self.ws[
+            "A1"] = f"Внутренние распорядительные документы со сроками исполнения в период с {self.srp} по {self.erp}"
         self.ws['A2'] = None
-        
+
         self.ws.append(REPORT_HEADER)
-        #Это пиздец, переделать
+        # Это пиздец, переделать
         _idx = 0
         for row_idx, order in enumerate(orders, 4):
             if _idx != 0:
@@ -181,7 +181,7 @@ class ExecutedOfThePeriod:
             self.ws[f'H{row_idx}'] = order.deadline
             self.ws[f'J{row_idx}'] = order.status_code
             self.ws[f'K{row_idx}'] = order.comment
-            for subrow_idx, suborder in enumerate(suborders, row_idx+1):
+            for subrow_idx, suborder in enumerate(suborders, row_idx + 1):
                 self._fill_row(subrow_idx, suborder)
                 self.ws[f'A{subrow_idx}'] = 'Поручение'
                 self.ws[f'B{subrow_idx}'] = order.issue_idx
@@ -201,7 +201,7 @@ class ExecutedOfThePeriod:
         self.ws.auto_filter.ref = "A3:K3"
         thin = Side(border_style="thin", color="000000")
         border = Border(top=thin, left=thin, right=thin, bottom=thin)
-        #HEADER
+        # HEADER
         for cell in self.ws['3:3']:
             cell.fill = PatternFill(fill_type='solid', fgColor="DBE5F1")
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -210,12 +210,12 @@ class ExecutedOfThePeriod:
 
         for row in self.ws.iter_rows(min_row=4):
             for col_idx, cell in enumerate(row, 1):
-                self.ws.column_dimensions[get_column_letter(col_idx)].width = REPORT_HEADER_WIDTH[col_idx - 1] 
+                self.ws.column_dimensions[get_column_letter(col_idx)].width = REPORT_HEADER_WIDTH[col_idx - 1]
                 cell.font = Font(name='Times New Roman', size=12, bold=False)
                 cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
                 cell.border = border
 
-    def form(self) -> bytes:
+    def form(self) -> Workbook:
         self._apply_styles()
         self.wb.save("ExecutedVRD.xlsx")
         return self.wb
@@ -232,19 +232,19 @@ class ApprovedPeriodData:
         self.start_report_period = start_period
         self.end_report_period = end_period
 
-    def _get_orders(self) -> list[ReportOrderRow]:
+    def _get_orders(self) -> tuple[Any]:
         q = Query.from_(self.orders_table).select(
-                self.orders_table.id,
-                self.orders_table.issue_type,
-                self.orders_table.issue_idx,
-                self.orders_table.approving_date,
-                self.orders_table.title,
-                self.orders_table.initiator,
-                self.orders_table.approving_employee,
-                self.orders_table.employee,
-                self.orders_table.deadline,
-                self.orders_table.status_code,
-                self.orders_table.comment
+            self.orders_table.id,
+            self.orders_table.issue_type,
+            self.orders_table.issue_idx,
+            self.orders_table.approving_date,
+            self.orders_table.title,
+            self.orders_table.initiator,
+            self.orders_table.approving_employee,
+            self.orders_table.employee,
+            self.orders_table.deadline,
+            self.orders_table.status_code,
+            self.orders_table.comment
         ).where(
             self.orders_table.approving_date[self.start_report_period:self.end_report_period]
         )
@@ -255,13 +255,13 @@ class ApprovedPeriodData:
         orders = self._get_orders()
         orders_ids = [row.id for row in orders]
         q = Query.from_(self.suborders_table).select(
-                self.suborders_table.id_orders,
-                self.suborders_table.content,
-                self.suborders_table.deadline,
-                self.suborders_table.status_code,
-                self.suborders_table.employee,
-                self.suborders_table.comment,
-                self.suborders_table.close_date,
+            self.suborders_table.id_orders,
+            self.suborders_table.content,
+            self.suborders_table.deadline,
+            self.suborders_table.status_code,
+            self.suborders_table.employee,
+            self.suborders_table.comment,
+            self.suborders_table.close_date,
         ).where(
             (self.suborders_table.id_orders.isin(orders_ids)) &
             (self.suborders_table.deleted == False)
@@ -297,7 +297,7 @@ class ApprovedForThePeriod:
         for col_idx in range(1, self.ws.max_column + 1):
             self.ws.cell(row_idx, col_idx).fill = _fill
 
-    def _data_to_sheet(self):
+    def _data_to_sheet(self) -> None:
         self.ws["A1"] = f"Внутренние распорядительные документы, утвержденные в период с {self.srp} по {self.erp}"
         self.ws["B2"] = '- без установленных сроков'
         self.ws["B3"] = '- на исполнении'
@@ -339,36 +339,37 @@ class ApprovedForThePeriod:
         self.ws.auto_filter.ref = "A6:K6"
         thin = Side(border_style="thin", color="000000")
         border = Border(top=thin, left=thin, right=thin, bottom=thin)
-        
-        #Ячейки с расшифровкой заливки
+
+        # Ячейки с расшифровкой заливки
         for cell in ('A2', 'A3', 'A4'):
             self.ws[cell].border = border
         self.ws['A2'].fill = PatternFill(fill_type='solid', fgColor="D7E4BC")
         self.ws['A3'].fill = PatternFill(fill_type='solid', fgColor="E6B9B8")
         self.ws['A4'].fill = PatternFill(fill_type='solid', fgColor="8DB4E3")
 
-        #HEADER
+        # HEADER
         for cell in self.ws['6:6']:
             cell.fill = PatternFill(fill_type='solid', fgColor="DBE5F1")
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.font = Font(name='Times New Roman', size=12, bold=True)
             cell.border = border
-            
+
         for row in self.ws.iter_rows(min_row=7):
             for col_idx, cell in enumerate(row, 1):
-                self.ws.column_dimensions[get_column_letter(col_idx)].width = REPORT_HEADER_WIDTH[col_idx - 1] 
+                self.ws.column_dimensions[get_column_letter(col_idx)].width = REPORT_HEADER_WIDTH[col_idx - 1]
                 cell.font = Font(name='Times New Roman', size=12, bold=False)
                 cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
                 cell.border = border
 
-    def form(self) -> bytes:
+    def form(self) -> Workbook:
         self._data_to_sheet()
         self._apply_styles()
         return self.wb
 
+
 class WeeklyReport:
     def __init__(self) -> None:
-        self.report_date= datetime.today()
+        self.report_date = datetime.today()
         if self.report_date.weekday() == 4:
             self.end_report_period = self.report_date - timedelta(days=14)
             self.start_report_period = self.end_report_period - timedelta(days=4)
@@ -395,7 +396,7 @@ class WeeklyReport:
             self.wb
         ).form()
         wb.save(self.output)
-        return self.output.getvalue() 
+        return self.output.getvalue()
 
     def send_report(self) -> None:
         self.form_approved_for_the_period()
