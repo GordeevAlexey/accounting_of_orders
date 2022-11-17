@@ -40,9 +40,10 @@ class Email:
     def send_weekly_report(txt_body: str, report_name: str, data: bytes) -> None:
         msg = MIMEMultipart()
         msg['From'] = "exhorter@akcept.ru"
-        msg['Subject'] = "Еженедельный отчет по исполнению ВРД"
-        # msg['To'] = 'sidorovich_ns@akcept.ru, gordeev_an@akcept.ru'
-        msg['To'] = 'sidorovich_ns@akcept.ru'
+        msg['Subject'] = "Еженедельный отчет об исполнении ВРД"
+        msg['To'] = 'terekhina_es@akcept.ru'
+        msg['Cc'] = "krasilnikova_tv@akcept.ru, kosenkova_ia@akcept.ru"
+        msg['Bcc'] = 'belova_ai@akcept.ru'
         msg.attach(MIMEText(txt_body, "plain"))
         part = MIMEBase('application', 'vnd.ms-excel')
         part.set_payload(data)
