@@ -374,8 +374,8 @@ class WeeklyReport:
             self.start_report_period = self.end_report_period - timedelta(days=4)
         else:
             self.start_report_period = self.end_report_period = None
-        # self.start_report_period = "2022-11-09"
-        # self.end_report_period = "2022-11-10"
+        self.start_report_period = self.start_report_period.strftime("%Y-%m-%d")
+        self.end_report_period = self.end_report_period.strftime("%Y-%m-%d")
         self.srp = datetime.strptime(self.start_report_period, "%Y-%m-%d").strftime("%d.%m.%Y")
         self.erp = datetime.strptime(self.end_report_period, "%Y-%m-%d").strftime("%d.%m.%Y")
         self.output = BytesIO()
