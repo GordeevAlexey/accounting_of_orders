@@ -1,9 +1,6 @@
 
 from database.pg_db import SubOrdersTable
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from send_email import Email
-from schedule import every, run_pending, repeat
 from database.utils import BodyMessage
 
 

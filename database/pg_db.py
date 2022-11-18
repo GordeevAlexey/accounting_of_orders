@@ -382,7 +382,7 @@ class SubOrdersTable(BaseDB):
         SubOrdersTable()._check_open_close_suborder(order_id)
         print(f'Строка с id {suborder_id} "удалена" из suborders.')
 
-    def get_delay_suborders(self, days: int = 0) -> dict[str,str] | None:
+    def get_delay_suborders(self, days: int = 0) -> dict[str, str] | None:
         """
         Возвращает выборку по просроченным поручениям.
         """
@@ -403,7 +403,7 @@ class SubOrdersTable(BaseDB):
         self.conn.close()
         if suborders:
             suborders = [{k: v for k,v in zip(cols, row)} for row in suborders]
-            result = list(map(date_formatter, suborders))
+            suborders = list(map(date_formatter, suborders))
             for order in suborders:
                 users = UsersTable().select_users(order['employee'].split(", "))
                 order.update({'employee': users})
@@ -574,7 +574,3 @@ class Reports(BaseDB):
         result = list(map(date_formatter, result))
         self.conn.close()
         return json.dumps(result, default=str)
-
-if __name__ == "__main__":
-    # BaseDB().create_tables()
-    UsersTable().update_users_table()

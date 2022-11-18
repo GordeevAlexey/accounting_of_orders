@@ -63,7 +63,6 @@ async def add_order(issue_idx: str = Form(),
         "status_code": 'На исполнении'
         })
 
-    #OrdersTable.add_order(js)
     OrdersTable().add_order(js)
     return RedirectResponse("/", status_code=303)
 
@@ -202,7 +201,7 @@ async def start_weekly_report():
 
 
 @app.delete("/weekly_report/delete/", tags=["weekly_report"])
-async def delete_reminder():
+async def delete_weekly_report():
     print("Планировщик удален")
     scheduler.remove_job("weekly_report")
     return {"Scheduled": False, "JobID": "weekly_report"}
@@ -214,15 +213,6 @@ async def delete_reminder():
     scheduler.remove_job("reminder")
     return {"Scheduled": False, "JobID": "reminder"}
 
-# @app.get("/get_order_report", response_description='xlsx')
-# async def get_task_order_report():
-#     #Скачивает отчет
-#     r = Report()
-#     r.get_report()
-#     headers = {
-#         'Content-Disposition': 'attachment; filename="report.xlsx"'
-#     }
-#     return StreamingResponse(r.output, headers=headers)
 
 if __name__ == "__main__":
     uvicorn.run("main:app",
