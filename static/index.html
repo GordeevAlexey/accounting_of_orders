@@ -125,7 +125,6 @@
 <div id="orders_manual">
     <h1>Реестр документов</h1>
     <input type="button" class="input_css" value="Добавить документ" onclick="showModalWin('add_order')">
-<!--    <input type="button" value="Удалить документ" onclick="showModalWin()">-->
 </div>
 
 <div id="orders"></div>
@@ -170,12 +169,11 @@
         <input name="deadline" class="input_css" type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="Исполнить до...">
         <textarea name="content" type="text" placeholder="Описание поручения"></textarea>
         <input type="submit" class="input_css" name="submit" value="Сохранить">
-<!--        <input name="current_order_id1" id="current_order_id1" type="text" hidden>-->
     </form>
 </div>
 
 <div style="text-align: center" id="close_suborder" class="modalwin">
-    <form action="" id="close_suborder_form" method="post" onsubmit="return addActionForm('close_suborder_form', 'close_suborder');">
+    <form action="" id="close_suborder_form" method="post" onsubmit="return addActionForm('close_suborder_form', 'close_suborder', 'closing_by_the_administrator');">
         <textarea name="comment_suborder" id="comment_suborder" type="text" placeholder="Комментарии"></textarea>
         <input type="submit" class="input_css" name="submit" value="Закрыть">
     </form>
@@ -339,7 +337,7 @@ function addActionForm() {
     if (arguments[1] == 'add_suborder' || arguments[1] == 'add_suborder'){
         document.getElementById(arguments[0]).action = '/' + arguments[1] + '/' + order_id
     } else {
-        document.getElementById(arguments[0]).action = '/' + arguments[1] + '/' + order_id + '/' + suborder_id
+        document.getElementById(arguments[0]).action = '/' + arguments[1] + '/' + order_id + '/' + suborder_id + '/' + arguments[2]
     }
 }
 
@@ -388,20 +386,6 @@ function deleteSuborder() {
 
 
 </script>
-
-
-<a href="#" onclick="reload_confirm(); return false;">
-	Обновить страницу
-</a>
-
-<script>
-function reload_confirm(){
-	if (confirm('Вы действительно хотите обновить страницу?')) {
-		$("#suborders").refreshData(true)
-	}
-}
-</script>
-
 
 </body>
 

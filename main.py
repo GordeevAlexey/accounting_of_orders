@@ -49,8 +49,6 @@ async def add_order(issue_idx: str = Form(),
                     comment: str = Form(),
                     reference: str = Form()):
 
-
-
     js = json.dumps({
         "issue_type": issue_type,
         "issue_idx": issue_idx,
@@ -113,9 +111,11 @@ async def update_suborder(current_order_id: str,
     return RedirectResponse("/", status_code=303)
 
 
-@app.post("/close_suborder/{current_order_id}/{current_suborder_id}")
-async def close_suborder(current_order_id: str,
+@app.post("/close_suborder/{current_order_id}/{current_suborder_id}/{response_type}")
+async def close_suborder(request: Request,
+                         current_order_id: str,
                          current_suborder_id: str,
+                         response_type: str,
                          comment_suborder: str = Form()):
 
     js = json.dumps({
@@ -126,7 +126,11 @@ async def close_suborder(current_order_id: str,
 
     SubOrdersTable().close_suborder(js)
 
-    return RedirectResponse("/", status_code=303)
+    if response_type == 'closing_by_the_performer':
+        return templates.TemplateResponse('close_suborder.html', {'request': request,
+                                                                  'suborder_id': current_suborder_id})
+    elif response_type == 'closing_by_the_administrator':
+        return RedirectResponse("/", status_code=303)
 
 
 @app.post("/delete_suborder/{current_order_id}/{current_suborder_id}")
@@ -201,14 +205,14 @@ async def start_weekly_report():
 async def delete_reminder():
     print("Планировщик удален")
     scheduler.remove_job("weekly_report")
-    return {"Scheduled": False,"JobID": "weekly_report"}
+    return {"Scheduled": False, "JobID": "weekly_report"}
 
 
 @app.delete("/reminder/delete/", tags=["reminder"])
 async def delete_reminder():
     print("Планировщик удален")
     scheduler.remove_job("reminder")
-    return {"Scheduled": False,"JobID": "reminder"}
+    return {"Scheduled": False, "JobID": "reminder"}
 
 # @app.get("/get_order_report", response_description='xlsx')
 # async def get_task_order_report():
@@ -222,8 +226,8 @@ async def delete_reminder():
 
 if __name__ == "__main__":
     uvicorn.run("main:app",
-                host="192.168.200.92",
-                # host="192.168.200.168",
+                # host="192.168.200.92",
+                host="192.168.200.168",
                 # headers=[('server', 'top4ik')],
                 port=8004,
                 reload=True)
