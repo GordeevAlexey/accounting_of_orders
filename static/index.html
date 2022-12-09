@@ -102,6 +102,7 @@
                 padding: 15px;
                 border: 1px solid #383838;
             }
+
             #shadow {
                 position: fixed;
                 width:100%;
@@ -125,6 +126,7 @@
 <div id="orders_manual">
     <h1>Реестр документов</h1>
     <input type="button" class="input_css" value="Добавить документ" onclick="showModalWin('add_order')">
+    <input id="update_border_btn" class="input_css" type="button" value="Редактировать приказ" onclick="showModalWin('update_order')" hidden>
 </div>
 
 <div id="orders"></div>
@@ -139,6 +141,7 @@
 </div>
 
 <div id="suborders"></div>
+
 <div style="text-align: center" id="add_order" class="modalwin">
     <form action="/add_order" method="post">
         <select class="js-example-basic-multiple" name="issue_type" id="issue_type">
@@ -355,6 +358,8 @@ function deleteSuborder() {
 </script>
 
 <script>
+
+
     function showModalWin() {
         var darkLayer = document.createElement('div'); // слой затемнения
         darkLayer.id = 'shadow'; // id чтобы подхватить стиль

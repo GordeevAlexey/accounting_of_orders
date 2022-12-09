@@ -183,13 +183,13 @@ async def start_reminder():
         id="reminder",
         replace_existing=True,
     )
-    return {"Scheduled": True,"JobID": reminder_job.id}
+    return {"Scheduled": True, "JobID": reminder_job.id}
 
 
 @app.post("/weekly_report/start", tags=["weekly_report"])
 async def start_weekly_report():
     print("Планировщик еженедельного отчета создан")
-    trigger = CronTrigger(day_of_week='fri', hour=14, minute=30)
+    trigger = CronTrigger(day_of_week='fri', hour=14, minute=50)
 
     weekly_report_job = scheduler.add_job(
         WeeklyReport().send_report,
@@ -197,7 +197,7 @@ async def start_weekly_report():
         id="weekly_report",
         replace_existing=True,
     )
-    return {"Scheduled": True,"JobID": weekly_report_job.id}
+    return {"Scheduled": True, "JobID": weekly_report_job.id}
 
 
 @app.delete("/weekly_report/delete/", tags=["weekly_report"])
