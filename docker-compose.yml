@@ -13,8 +13,8 @@ services:
       - TZ=Asia/Novosibirsk
     ports:
       - 5432:5432
-  app:
-    container_name: app
+  accounting_of_orders:
+    container_name: accounting_of_orders
     build: .
     depends_on:
       - "db"
@@ -27,4 +27,3 @@ services:
       - TZ=Asia/Novosibirsk
     ports:
       - 8004:8004
-    
