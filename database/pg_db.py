@@ -181,7 +181,6 @@ class OrdersTable(BaseDB):
 
     def add_order(self, row: JsonDict) -> None:
         table = Table("orders")
-        row = json.loads(row)
         if not row['deadline']:
             row['deadline'] = datetime.now().date().replace(month=12, day=31)
         row['approving_date'] = datetime.strptime(row['approving_date'], "%Y-%m-%d").date()
@@ -221,11 +220,10 @@ class OrdersTable(BaseDB):
         self.conn.close()
         print(f'Задача с id {id} и ее подзадачи "удалены" из orders.')
 
-    def update_order(self, data: JsonDict) -> None:
+    def update_order(self, data: dict) -> None:
         #Обязательно должен быть передан id записи
-        data = json.loads(data)
         q = Query.update(self.table).where(self.table.id == data['id'])\
-            .set('update_date', datetime.now())#.strftime('%d.%m.%Y %H:%M:%S'))
+            .set('update_date', datetime.now())
         for key in data:
             q = q.set(key, data[key])
         with self.conn:
@@ -318,8 +316,7 @@ class SubOrdersTable(BaseDB):
 
         return data_to_update
 
-    def close_suborder(self, row: JsonDict) -> None:
-        row = json.loads(row)
+    def close_suborder(self, row: dict) -> None:
 
         q = Query.update(self.table).where(
             (self.table.id == row['id']) &
@@ -336,9 +333,8 @@ class SubOrdersTable(BaseDB):
         self.conn.close()
         SubOrdersTable()._check_open_close_suborder(row['id_orders'])
 
-    def update_suborder(self, data: JsonDict) -> None:
+    def update_suborder(self, data: dict) -> None:
         #Обязательно должен быть передан id записи и id_orders
-        data = json.loads(data)
         _id = data['id']
         q = Query.update(self.table).where(
             (self.table.id == data['id'])
@@ -354,11 +350,10 @@ class SubOrdersTable(BaseDB):
         HistoryTable().add(self.check_for_update(data))
         print(f'Успешно обновленны данные id:{_id}')
 
-    def add_suborder(self, row: JsonDict) -> str:
+    def add_suborder(self, row: dict) -> str:
         """
         Возвращает созданный id подзадачи
         """
-        row = json.loads(row)
         _columns = row.keys()
         if not row['deadline']:
             row['deadline'] = datetime.now().date().replace(month=12, day=31)
@@ -373,7 +368,6 @@ class SubOrdersTable(BaseDB):
         return suborder_id
 
     def delete_suborder_row(self, order_id: str, suborder_id: str) -> None:
-        #? шляпа с хинтами
         q = Query.update(self.table).where(self.table.id == suborder_id)\
             .set('deleted', True)
         with self.conn:

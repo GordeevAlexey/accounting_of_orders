@@ -1,10 +1,7 @@
-import json
-from datetime import datetime
-from database.pg_db import OrdersTable, SubOrdersTable, UsersTable, HistoryTable, Reports
-from datetime import datetime
+from database.pg_db import OrdersTable, SubOrdersTable, UsersTable, Reports
 
 import uvicorn
-from fastapi import FastAPI, Form, Body
+from fastapi import FastAPI, Form
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
@@ -49,7 +46,7 @@ async def add_order(issue_idx: str = Form(),
                     comment: str = Form(),
                     reference: str = Form()):
 
-    js = json.dumps({
+    data = {
         "issue_type": issue_type,
         "issue_idx": issue_idx,
         "approving_date": approving_date,
@@ -61,9 +58,9 @@ async def add_order(issue_idx: str = Form(),
         "comment": comment,
         "reference": reference,
         "status_code": 'На исполнении'
-        })
+        }
 
-    OrdersTable().add_order(js)
+    OrdersTable().add_order(data)
     return RedirectResponse("/", status_code=303)
 
 
@@ -73,15 +70,15 @@ async def add_suborder(current_order_id: str,
                        deadline: str = Form(),
                        content: str = Form()):
 
-    js = json.dumps({
+    data = {
         "id_orders": current_order_id,
         "employee": ', '.join(employee_sub_order),
         "deadline": deadline,
         "content": content,
         "status_code": 'На исполнении'
-        })
+        }
 
-    suborder_id = SubOrdersTable().add_suborder(js)
+    suborder_id = SubOrdersTable().add_suborder(data)
     users = UsersTable().select_users(employee_sub_order)
     Email.send_info(suborder_id, users, Action.ADD)
 
@@ -95,15 +92,15 @@ async def update_suborder(current_order_id: str,
                           deadline_up: str = Form(),
                           content_up: str = Form()
                           ):
-    js = json.dumps({
+    data = {
         "id_orders": current_order_id,
         "id": current_suborder_id,
         "employee": ', '.join(employee_up),
         "deadline": deadline_up,
         "content": content_up
-    })
+    }
 
-    SubOrdersTable().update_suborder(js)
+    SubOrdersTable().update_suborder(data)
     users = UsersTable().select_users(employee_up)
     Email.send_info(current_suborder_id, users, Action.UPDATE)
 
@@ -117,13 +114,13 @@ async def close_suborder(request: Request,
                          response_type: str,
                          comment_suborder: str = Form()):
 
-    js = json.dumps({
+    data = {
         "id_orders": current_order_id,
         "id": current_suborder_id,
         "comment": comment_suborder
-    })
+    }
 
-    SubOrdersTable().close_suborder(js)
+    SubOrdersTable().close_suborder(data)
 
     if response_type == 'closing_by_the_performer':
         return templates.TemplateResponse('close_suborder.html', {'request': request,
