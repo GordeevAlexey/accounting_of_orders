@@ -402,7 +402,7 @@ class WeeklyReport:
         self.form_approved_for_the_period()
         Email.send_weekly_report(
             f"""Отчет об исполнении за период {self.srp} - {self.erp}\n\n"""
-            """*Данное сообщение сформированно автоматическе. Не нжуно на него отвечать.\n\n""",
+            """*Данное сообщение сформировано автоматически. Не нужно на него отвечать.\n\n""",
             f"weekly_report {self.srp}-{self.erp}",
             self.form_executed_for_the_period()
         )

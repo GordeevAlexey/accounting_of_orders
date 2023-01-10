@@ -5,9 +5,10 @@ from dotenv import load_dotenv
 from pypika import Query, Table, Case, functions as fn
 from datetime import datetime, timedelta
 import json
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import requests
 from database.utils import User, date_formatter
+# from utils import User, date_formatter
 # from utils import User, SuborderRow, date_formatter
 
 #Алиас для json
@@ -122,7 +123,6 @@ class OrdersTable(BaseDB):
                 result = [{k: v for k, v in zip(headers, row)} for row in orders]
                 result = list(map(date_formatter, result))
         self.conn.close()
-        print(result)
         return json.dumps(result, default=str)
 
     def get_orders_table(self) -> JsonList:
@@ -241,7 +241,7 @@ class SubOrdersTable(BaseDB):
     """
     table = Table('suborders')
 
-    def _get_suborders_header(self):
+    def _get_suborders_header(self) -> Optional[list]:
         #Возвращает все имена столбцов таблицы SUBORDERS
         with self.conn:
             with self.conn.cursor() as cursor:
@@ -251,8 +251,9 @@ class SubOrdersTable(BaseDB):
                     return headers
                 except:
                     return None
-                finally:
-                    cursor.close()
+                #Баг тут?
+                # finally:
+                #     cursor.close()
 
     def get_suborders_table(self, id_orders: str) -> json:
         # Выгрзука подзадач по отдельному приказу или поручению
@@ -574,3 +575,4 @@ class Reports(BaseDB):
         result = list(map(date_formatter, result))
         self.conn.close()
         return json.dumps(result, default=str)
+

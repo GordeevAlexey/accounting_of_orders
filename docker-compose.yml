@@ -1,43 +1,30 @@
-# version: "3.9"
-# services:
-#   db:
-#     container_name: database
-#     restart: always
-#     image: postgres:latest
-#     volumes:
-#       - ./database/sql/pg_schema.sql:/docker-entrypoint-initdb.d/pg_schema.sql
-#     environment:
-#       - POSTGRES_PASSWORD=admin
-#       - POSTGRES_USER=postgres
-#       - POSTGRES_DB=postgres
-#       - TZ=Asia/Novosibirsk
-#     ports:
-#       - 5432:5432
-#   app:
-#     container_name: app
-#     build: .
-#     depends_on:
-#       - "db"
-#     environment:
-#       - USER=postgres
-#       - DBNAME=postgres
-#       - PASSWORD=admin
-#       - HOST=192.168.200.92
-#       - PORT=5432
-#       - TZ=Asia/Novosibirsk
-#     ports:
-#       - 8004:8004
-    
 version: "3.9"
-
 services:
   db:
-    container_name: db
+    container_name: database
     restart: always
     image: postgres:latest
     volumes:
-      - ./pg_schema.sql:/docker-entrypoint-initdb.d/pg_schema.sql
+      - ./database/sql/pg_schema.sql:/docker-entrypoint-initdb.d/pg_schema.sql
     environment:
       - POSTGRES_PASSWORD=admin
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+      - TZ=Asia/Novosibirsk
     ports:
       - 5432:5432
+  app:
+    container_name: app
+    build: .
+    depends_on:
+      - "db"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DBNAME=postgres
+      - POSTGRES_PASSWORD=admin
+      - HOST=192.168.200.92
+      - PORT=5432
+      - TZ=Asia/Novosibirsk
+    ports:
+      - 8004:8004
+    

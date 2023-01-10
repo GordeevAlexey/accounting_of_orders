@@ -42,8 +42,7 @@ class Email:
         # msg['To'] = 'terekhina_es@akcept.ru'
         msg['To'] = 'azarova@akcept.ru'
         # msg['Cc'] = "krasilnikova_tv@akcept.ru, kosenkova_ia@akcept.ru"
-        msg['Cc'] = "sidorovich_ns@akcept.ru, gordeev_an@akcept.ru"
-        msg['Bcc'] = 'belova_ai@akcept.ru'
+        msg['Bcc'] = "sidorovich_ns@akcept.ru, gordeev_an@akcept.ru"
         msg.attach(MIMEText(txt_body, "plain"))
         part = MIMEBase('application', 'vnd.ms-excel')
         part.set_payload(data)
