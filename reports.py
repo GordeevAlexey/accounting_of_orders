@@ -54,7 +54,7 @@ REPORT_HEADER_WIDTH = (17, 13, 23, 43, 40, 40, 40, 18, 45, 40, 18, 35)
 class ReportOrderRow(NamedTuple):
     id: Optional[str] = None
     issue_type: Optional[str] = None
-    issue_idx: Optional[int] = None
+    issue_idx: Optional[str] = None
     approving_date: Optional[datetime] = None
     title: Optional[str] = None
     initiator: Optional[str] = None
@@ -370,17 +370,17 @@ class ApprovedForThePeriod:
 class WeeklyReport:
     def __init__(self) -> None:
         self.report_date = datetime.today()
+        self.time_to_report = False
         if self.report_date.weekday() == 4:
-            self.end_report_period = self.report_date - timedelta(days=14)
-            self.start_report_period = self.end_report_period - timedelta(days=4)
-        else:
-            self.start_report_period = self.end_report_period = None
-        self.start_report_period = self.start_report_period.strftime("%Y-%m-%d")
-        self.end_report_period = self.end_report_period.strftime("%Y-%m-%d")
-        self.srp = datetime.strptime(self.start_report_period, "%Y-%m-%d").strftime("%d.%m.%Y")
-        self.erp = datetime.strptime(self.end_report_period, "%Y-%m-%d").strftime("%d.%m.%Y")
-        self.output = BytesIO()
-        self.wb = Workbook()
+            self.time_to_report = True
+            self.start_report_period = self.report_date - timedelta(days=11)
+            self.end_report_period = self.start_report_period + timedelta(days=4)
+            self.start_report_period = self.start_report_period.strftime("%Y-%m-%d")
+            self.end_report_period = self.end_report_period.strftime("%Y-%m-%d")
+            self.srp = datetime.strptime(self.start_report_period, "%Y-%m-%d").strftime("%d.%m.%Y")
+            self.erp = datetime.strptime(self.end_report_period, "%Y-%m-%d").strftime("%d.%m.%Y")
+            self.output = BytesIO()
+            self.wb = Workbook()
 
     def form_approved_for_the_period(self) -> None:
         approved_period = ApprovedForThePeriod(
@@ -399,10 +399,11 @@ class WeeklyReport:
         return self.output.getvalue()
 
     def send_report(self) -> None:
-        self.form_approved_for_the_period()
-        Email.send_weekly_report(
-            f"""Отчет об исполнении за период {self.srp} - {self.erp}\n\n"""
-            """*Данное сообщение сформировано автоматически. Не нужно на него отвечать.\n\n""",
-            f"weekly_report {self.srp}-{self.erp}",
-            self.form_executed_for_the_period()
-        )
+        if self.time_to_report is True:
+            self.form_approved_for_the_period()
+            Email.send_weekly_report(
+                f"""Отчет об исполнении за период {self.srp} - {self.erp}\n\n"""
+                """*Данное сообщение сформировано автоматически. Не нужно на него отвечать.\n\n""",
+                f"weekly_report {self.srp}-{self.erp}",
+                self.form_executed_for_the_period()
+            )
