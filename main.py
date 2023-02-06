@@ -214,7 +214,13 @@ async def delete_reminder():
 if __name__ == "__main__":
     uvicorn.run("main:app",
                 host="0.0.0.0",
-                # host="192.168.200.168",
-                # headers=[('server', 'top4ik')],
                 port=8004,
                 reload=True)
+    # x = """
+    #     <pre>
+    #     Добрый день.<br>
+    #     Вам назначено новое поручение.<br>
+    #     Перейдите по <a href="http://192.168.200.92:8004/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+    #     *Данное письмо сформировано автоматически, не нужно на него отвечать.
+    #     </pre>"""
+    # Email._send("sidorovich_ns@akcept.ru", x)

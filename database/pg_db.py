@@ -283,15 +283,15 @@ class SubOrdersTable(BaseDB):
                 cursor.execute(str(id_orders_query))
 
                 if all([True if row[0] == 'Завершено' else False for row in cursor.fetchall()]):
-                    OrdersTable().update_order(json.dumps({
+                    OrdersTable().update_order({
                         'status_code': 'Завершено',
                         'id': order_id
-                    }))
+                    })
                 else:
-                    OrdersTable().update_order(json.dumps({
+                    OrdersTable().update_order({
                         'status_code': 'На исполнении',
                         'id': order_id
-                    }))
+                    })
         self.conn.close()
 
     def check_for_update(self, data_for_update: dict) -> JsonDict:
