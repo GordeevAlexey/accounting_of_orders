@@ -18,7 +18,7 @@ class Email:
         msg.attach(MIMEText(txt_body, "html"))
 
         server = smtplib.SMTP("10.0.100.10", 25)
-        server.send_message(msg['From'], msg['To'], msg.as_string())
+        server.sendmail(msg['From'], msg['To'], msg.as_string())
         server.quit()
 
     @staticmethod
@@ -50,6 +50,6 @@ class Email:
         part.add_header('Content-Disposition', f"attachment; filename={report_name}.xlsx")
         msg.attach(part)
         server = smtplib.SMTP("10.0.100.10", 25)
-        server.send_message(msg['From'], msg['To'], msg.as_string())
+        server.sendmail(msg['From'], msg['To'], msg.as_string())
         server.quit()
 
