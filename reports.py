@@ -9,6 +9,13 @@ from openpyxl.utils import get_column_letter
 from send_email import Email
 from typing import Optional
 import psycopg2
+import logging
+
+logging.basicConfig(
+    filename='logs.log', filemode='w',
+    format='[%(levelname)s - %(asctime)s] %(name)s - %(message)s',
+    datefmt='%d.%m.%Y %H:%M:%S'
+)
 
 SUBORDERS_HEADER = (
     "id_orders",
@@ -145,6 +152,7 @@ class ExecutedOfThePeriodData:
 class ExecutedOfThePeriod:
 
     def __init__(self, start_period: datetime, end_period: datetime, wb: Workbook) -> None:
+    # def __init__(self, start_period: datetime, end_period: datetime) -> None:
         self.start_period = start_period
         self.end_period = end_period
         self.srp = datetime.strptime(start_period, "%Y-%m-%d").strftime("%d.%m.%Y")
@@ -191,7 +199,6 @@ class ExecutedOfThePeriod:
                 self.ws[f'J{subrow_idx}'] = suborder.status_code
                 self.ws[f'K{subrow_idx}'] = suborder.comment
                 _idx = subrow_idx
-                print(f'{subrow_idx=}')
 
     def _apply_styles(self) -> None:
         self._data_to_sheet()
@@ -217,7 +224,6 @@ class ExecutedOfThePeriod:
 
     def form(self) -> Workbook:
         self._apply_styles()
-        self.wb.save("ExecutedVRD.xlsx")
         return self.wb
 
 
@@ -275,13 +281,13 @@ class ApprovedForThePeriod:
     Отчет об утвержденных за период ВРД
     """
 
-    def __init__(self, start_period: datetime, end_period: datetime, wb: Workbook) -> None:
-        self.output = BytesIO()
+    def __init__(self, start_period: datetime, end_period: datetime) -> None:
         self.start_period = start_period
         self.end_period = end_period
         self.srp = datetime.strptime(start_period, "%Y-%m-%d").strftime("%d.%m.%Y")
         self.erp = datetime.strptime(end_period, "%Y-%m-%d").strftime("%d.%m.%Y")
-        self.wb = wb
+        # self.wb = wb
+        self.wb = Workbook()
         self.ws = self.wb.active
         self.ws.title = "Утвержденные за период"
 
@@ -364,29 +370,36 @@ class ApprovedForThePeriod:
     def form(self) -> Workbook:
         self._data_to_sheet()
         self._apply_styles()
+        logging.info(f'Отчет об утвержденных за период {self.srp}-{self.erp} ВРД')
         return self.wb
 
 
 class WeeklyReport:
     def __init__(self) -> None:
-        self.report_date = datetime.today()
+        # self.report_date = datetime.today()
         self.time_to_report = False
+        # if self.report_date.weekday() == 4:
+        #     self.time_to_report = True
+        #     self.start_report_period = self.report_date - timedelta(days=11)
+        #     self.end_report_period = self.start_report_period + timedelta(days=4)
+        #     self.start_report_period = self.start_report_period.strftime("%Y-%m-%d")
+        #     self.end_report_period = self.end_report_period.strftime("%Y-%m-%d")
+        #     self.output = BytesIO()
+        #     self.wb = Workbook()
+        self.report_date = datetime.strptime("28.04.2023", "%d.%m.%Y")
         if self.report_date.weekday() == 4:
             self.time_to_report = True
             self.start_report_period = self.report_date - timedelta(days=11)
             self.end_report_period = self.start_report_period + timedelta(days=4)
             self.start_report_period = self.start_report_period.strftime("%Y-%m-%d")
             self.end_report_period = self.end_report_period.strftime("%Y-%m-%d")
-            self.srp = datetime.strptime(self.start_report_period, "%Y-%m-%d").strftime("%d.%m.%Y")
-            self.erp = datetime.strptime(self.end_report_period, "%Y-%m-%d").strftime("%d.%m.%Y")
             self.output = BytesIO()
-            self.wb = Workbook()
 
     def form_approved_for_the_period(self) -> None:
         approved_period = ApprovedForThePeriod(
             self.start_report_period,
             self.end_report_period,
-            self.wb).form()
+            ).form()
         self.wb = approved_period
 
     def form_executed_for_the_period(self) -> bytes:
@@ -396,14 +409,21 @@ class WeeklyReport:
             self.wb
         ).form()
         wb.save(self.output)
-        return self.output.getvalue()
+        res = self.output.getvalue()
+        self.output.close()
+        self.output = BytesIO()
+        #Если убрать, то отчет становится накопительный и начинает весить очень много.
+        return res
 
     def send_report(self) -> None:
         if self.time_to_report is True:
             self.form_approved_for_the_period()
+            srp = '.'.join(self.start_report_period.split("-")[::-1])
+            erp = '.'.join(self.end_report_period.split("-")[::-1])
             Email.send_weekly_report(
-                f"""Отчет об исполнении за период {self.srp} - {self.erp}\n\n"""
+                f"""Отчет об исполнении за период {srp} - {erp}\n\n"""
                 """*Данное сообщение сформировано автоматически. Не нужно на него отвечать.\n\n""",
-                f"weekly_report {self.srp}-{self.erp}",
+                f"""weekly_report {srp}-{erp}""",
                 self.form_executed_for_the_period()
             )
+            print(f'Сработало -> {datetime.now().strftime("%d.%m.%Y %H:%M:%S")}')

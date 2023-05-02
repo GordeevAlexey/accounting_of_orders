@@ -15,10 +15,16 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.combining import OrTrigger
 from reports import WeeklyReport
+import logging
+
+logging.basicConfig(
+    filename='logs.log', filemode='a',
+    format='[%(levelname)s - %(asctime)s] %(name)s - %(message)s',
+    datefmt='%d.%m.%Y %H:%M:%S'
+)
 
 
 app = FastAPI()
-
 
 scheduler = AsyncIOScheduler()
 scheduler.start()
@@ -166,49 +172,86 @@ async def start(request: Request):
 async def get_users():
     return UsersTable().get_users()
 
+@app.on_event("startup")
+async def startup():
+    # print("ОВЫФВРЛЫФОВЕН?*П№ГВЦЕ?*НПНГИРКЕ?*№ПЦГШИЙР")
+    # logging.info("Планировщик создан")
+    try:
+        trigger = OrTrigger([
+            CronTrigger(day_of_week=day, hour=6, minute=30)
+                for day in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')
+        ])
 
-@app.post("/reminder/start/", tags=["reminder"])
-async def start_reminder():
-    print("Планировщик создан")
-    trigger = OrTrigger([
-        CronTrigger(day_of_week=day, hour=6, minute=30)
-            for day in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')])
+        scheduler.add_job(
+            Reminder().remind_to_employee,
+            trigger=trigger,
+            id="reminder",
+            replace_existing=True,
+        )
+    except Exception as e:
+        logging.error(f"Ошибка планировщика: {e}")
+    ################
+    logging.info("Планировщик еженедельного отчета создан")
+    try:
+        trigger = CronTrigger(day_of_week='fri', hour=14, minute=30)
+        # trigger = OrTrigger([
+        #     CronTrigger(second=30)
+        #         for day in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')
+        # ])
 
-    reminder_job = scheduler.add_job(
-        Reminder().remind_to_employee,
-        trigger=trigger,
-        id="reminder",
-        replace_existing=True,
-    )
-    return {"Scheduled": True, "JobID": reminder_job.id}
-
-
-@app.post("/weekly_report/start", tags=["weekly_report"])
-async def start_weekly_report():
-    print("Планировщик еженедельного отчета создан")
-    trigger = CronTrigger(day_of_week='fri', hour=14, minute=30)
-
-    weekly_report_job = scheduler.add_job(
-        WeeklyReport().send_report,
-        trigger=trigger,
-        id="weekly_report",
-        replace_existing=True,
-    )
-    return {"Scheduled": True, "JobID": weekly_report_job.id}
+        scheduler.add_job(
+            func=WeeklyReport().send_report,
+            trigger=trigger,
+            id="weekly_report",
+            replace_existing=True,
+        )
+    except Exception as e:
+        logging.error(f"Ошибка отчета: {e}")
+    # WeeklyReport().send_report()
 
 
-@app.delete("/weekly_report/delete/", tags=["weekly_report"])
-async def delete_weekly_report():
-    print("Планировщик удален")
-    scheduler.remove_job("weekly_report")
-    return {"Scheduled": False, "JobID": "weekly_report"}
+# @app.post("/reminder/start/", tags=["reminder"])
+# async def start_reminder():
+#     print("Планировщик создан")
+#     trigger = OrTrigger([
+#         CronTrigger(day_of_week=day, hour=6, minute=30)
+#             for day in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')])
+
+#     reminder_job = scheduler.add_job(
+#         Reminder().remind_to_employee,
+#         trigger=trigger,
+#         id="reminder",
+#         replace_existing=True,
+#     )
+#     return {"Scheduled": True, "JobID": reminder_job.id}
 
 
-@app.delete("/reminder/delete/", tags=["reminder"])
-async def delete_reminder():
-    print("Планировщик удален")
-    scheduler.remove_job("reminder")
-    return {"Scheduled": False, "JobID": "reminder"}
+# @app.post("/weekly_report/start", tags=["weekly_report"])
+# async def start_weekly_report():
+#     print("Планировщик еженедельного отчета создан")
+#     trigger = CronTrigger(day_of_week='fri', hour=14, minute=30)
+
+#     weekly_report_job = scheduler.add_job(
+#         WeeklyReport().send_report,
+#         trigger=trigger,
+#         id="weekly_report",
+#         replace_existing=True,
+#     )
+#     return {"Scheduled": True, "JobID": weekly_report_job.id}
+
+
+# @app.delete("/weekly_report/delete/", tags=["weekly_report"])
+# async def delete_weekly_report():
+#     print("Планировщик удален")
+#     scheduler.remove_job("weekly_report")
+#     return {"Scheduled": False, "JobID": "weekly_report"}
+
+
+# @app.delete("/reminder/delete/", tags=["reminder"])
+# async def delete_reminder():
+#     print("Планировщик удален")
+#     scheduler.remove_job("reminder")
+#     return {"Scheduled": False, "JobID": "reminder"}
 
 
 if __name__ == "__main__":
@@ -216,3 +259,4 @@ if __name__ == "__main__":
                 host="0.0.0.0",
                 port=8004,
                 reload=True)
+        

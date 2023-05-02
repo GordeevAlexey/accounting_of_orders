@@ -8,6 +8,14 @@ import json
 from typing import Dict, Any, Optional
 import requests
 from database.utils import User, date_formatter
+import logging
+from pprint import pprint
+
+logging.basicConfig(
+    filename='../logs.log', filemode='a',
+    format='[%(levelname)s - %(asctime)s] %(name)s - %(message)s',
+    datefmt='%d.%m.%Y %H:%M:%S'
+)
 # from utils import User, date_formatter
 # from utils import User, SuborderRow, date_formatter
 
@@ -42,7 +50,8 @@ class BaseDB:
                 with self.conn.cursor() as cursor:
                     cursor.execute(tables_creation_request)
             self.conn.close()
-        print("Таблицы успешно созданы")
+        logging.info("Таблицы успешно созданы")
+        
 
     def execute_query(self, query: str):
         with self.conn:
@@ -191,7 +200,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
         self.conn.close()
-        print(f"Поручение добавлено")
+        logging.info("Поручение добавлено")
 
     def delete_order_row(self, id: bytes) -> None:
         """
@@ -216,9 +225,9 @@ class OrdersTable(BaseDB):
                 for _id in suborders_ids:
                     SubOrdersTable().delete_suborder_row(_id.encode('utf-8'))
             except:
-                print(f'Подзадачи по id {id} не заведены')
+                logging.info(f'Подзадачи по id {id} не заведены')
         self.conn.close()
-        print(f'Задача с id {id} и ее подзадачи "удалены" из orders.')
+        logging.info(f'Задача с id {id} и ее подзадачи "удалены" из orders.')
 
     def update_order(self, data: dict) -> None:
         #Обязательно должен быть передан id записи
@@ -230,7 +239,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
         self.conn.close()
-        print(f'Успешно обновленны данные id:{data["id"]}')
+        logging.info(f'Успешно обновленны данные id:{data["id"]}')
 
 
 class SubOrdersTable(BaseDB):
@@ -249,9 +258,6 @@ class SubOrdersTable(BaseDB):
                     return headers
                 except:
                     return None
-                #Баг тут?
-                # finally:
-                #     cursor.close()
 
     def get_suborders_table(self, id_orders: str) -> json:
         # Выгрзука подзадач по отдельному приказу или поручению
@@ -348,7 +354,7 @@ class SubOrdersTable(BaseDB):
         SubOrdersTable()._check_open_close_suborder(data['id_orders'])
         self.conn.close()
         HistoryTable().add(self.check_for_update(data))
-        print(f'Успешно обновленны данные id:{_id}')
+        logging.info(f'Успешно обновленны данные id:{_id}')
 
     def add_suborder(self, row: dict) -> str:
         """
@@ -364,7 +370,7 @@ class SubOrdersTable(BaseDB):
                 [suborder_id] = cursor.fetchone()
         self.conn.close()
         SubOrdersTable()._check_open_close_suborder(row['id_orders'])
-        print(f"Поручение добавлено")
+        logging.info("Поручение добавлено")
         return suborder_id
 
     def delete_suborder_row(self, order_id: str, suborder_id: str) -> None:
@@ -375,7 +381,7 @@ class SubOrdersTable(BaseDB):
                 cursor.execute(str(q))
         self.conn.close()
         SubOrdersTable()._check_open_close_suborder(order_id)
-        print(f'Строка с id {suborder_id} "удалена" из suborders.')
+        logging.info(f'Строка с id {suborder_id} "удалена" из suborders.')
 
     def get_delay_suborders(self, days: int = 0) -> dict[str, str] | None:
         """
@@ -476,7 +482,7 @@ class UsersTable(BaseDB):
                 try:
                     cursor.execute(str(q))
                 except psycopg2.errors.UniqueViolation as e:
-                    print(f'Пользватель {user["user_name"]} уже имеется в базе.')
+                    logging.warning(f'Пользватель {user["user_name"]} уже имеется в базе.')
         self.conn.close()
 
     def select_users(self, users: list[str]) -> list[User]:
@@ -520,10 +526,9 @@ class UsersTable(BaseDB):
                     try:
                         cursor.execute(str(q))
                     except psycopg2.errors.UniqueViolation as e:
-                        print(f'Пользватель {row["user_name"]} уже имеется в базе.')
+                        logging.info(f'Пользватель {row["user_name"]} уже имеется в базе.')
         self.conn.close()
-
-        print(f"Таблица пользователей обновлена")
+        logging.info(f"Таблица пользователей обновлена")
 
 
 class Reports(BaseDB):
@@ -534,9 +539,9 @@ class Reports(BaseDB):
         super().__init__()
 
     def get_info_suborder(self, id_suborder: str) -> JsonDict:
-        headers = ["id_order", "issue_type", "issue_idx", "approving_date", "title", "initiator", "approving_employee",
+        headers = ("id_order", "issue_type", "issue_idx", "approving_date", "title", "initiator", "approving_employee",
                    "employee_order", "deadline", "comment", "reference", "id_suborder", "employee_sub_order", "deadline_suborder",
-                   "status_code", "content", "comment_suborder"]
+                   "status_code", "content", "comment_suborder")
         q = Query\
             .from_(self.table_sub_orders)\
             .join(self.table_orders)\
@@ -566,7 +571,7 @@ class Reports(BaseDB):
                 orders = cursor.fetchall()
 
         result = [{k: v for k, v in zip(headers, row)} for row in orders]
-        result = list(map(date_formatter, result))
         self.conn.close()
-        return json.dumps(result, default=str)
+        res = json.dumps(result, default=str)
+        return res 
 

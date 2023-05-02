@@ -14,6 +14,7 @@ class Reminder:
 
     @staticmethod
     def remind_to_employee() -> None:
+        print("Напоминалка сработала!")
         Reminder._form_and_send(days=3)
         Reminder._form_and_send()
     

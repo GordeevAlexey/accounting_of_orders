@@ -40,9 +40,11 @@ class Email:
         msg['From'] = "exhorter@akcept.ru"
         msg['Subject'] = "Еженедельный отчет об исполнении ВРД"
         # msg['To'] = 'terekhina_es@akcept.ru'
-        msg['To'] = 'azarova@akcept.ru'
+        # msg['To'] = 'azarova@akcept.ru'
+        # msg['To'] = "sidorovich_ns@akcept.ru, gordeev_an@akcept.ru"
+        msg['To'] = "sidorovich_ns@akcept.ru"
         # msg['Cc'] = "krasilnikova_tv@akcept.ru, kosenkova_ia@akcept.ru"
-        msg['Bcc'] = "sidorovich_ns@akcept.ru, gordeev_an@akcept.ru"
+        # msg['Bcc'] = "sidorovich_ns@akcept.ru, gordeev_an@akcept.ru"
         msg.attach(MIMEText(txt_body, "plain"))
         part = MIMEBase('application', 'vnd.ms-excel')
         part.set_payload(data)
