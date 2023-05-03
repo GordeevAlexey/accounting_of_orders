@@ -9,15 +9,11 @@ from typing import Dict, Any, Optional
 import requests
 from database.utils import User, date_formatter
 import logging
-from pprint import pprint
+from logger.logger import *
 
-logging.basicConfig(
-    filename='../logs.log', filemode='a',
-    format='[%(levelname)s - %(asctime)s] %(name)s - %(message)s',
-    datefmt='%d.%m.%Y %H:%M:%S'
-)
-# from utils import User, date_formatter
-# from utils import User, SuborderRow, date_formatter
+
+logger = logging.getLogger(__name__)
+
 
 #Алиас для json
 JsonDict = Dict[str, Any]
@@ -50,7 +46,7 @@ class BaseDB:
                 with self.conn.cursor() as cursor:
                     cursor.execute(tables_creation_request)
             self.conn.close()
-        logging.info("Таблицы успешно созданы")
+        logger.info("Таблицы успешно созданы")
         
 
     def execute_query(self, query: str):
@@ -200,7 +196,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
         self.conn.close()
-        logging.info("Поручение добавлено")
+        logger.info("Поручение добавлено")
 
     def delete_order_row(self, id: bytes) -> None:
         """
@@ -225,9 +221,9 @@ class OrdersTable(BaseDB):
                 for _id in suborders_ids:
                     SubOrdersTable().delete_suborder_row(_id.encode('utf-8'))
             except:
-                logging.info(f'Подзадачи по id {id} не заведены')
+                logger.info(f'Подзадачи по id {id} не заведены')
         self.conn.close()
-        logging.info(f'Задача с id {id} и ее подзадачи "удалены" из orders.')
+        logger.info(f'Задача с id {id} и ее подзадачи "удалены" из orders.')
 
     def update_order(self, data: dict) -> None:
         #Обязательно должен быть передан id записи
@@ -239,7 +235,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
         self.conn.close()
-        logging.info(f'Успешно обновленны данные id:{data["id"]}')
+        logger.info(f'Успешно обновленны данные id:{data["id"]}')
 
 
 class SubOrdersTable(BaseDB):
@@ -354,7 +350,7 @@ class SubOrdersTable(BaseDB):
         SubOrdersTable()._check_open_close_suborder(data['id_orders'])
         self.conn.close()
         HistoryTable().add(self.check_for_update(data))
-        logging.info(f'Успешно обновленны данные id:{_id}')
+        logger.info(f'Успешно обновленны данные id:{_id}')
 
     def add_suborder(self, row: dict) -> str:
         """
@@ -370,7 +366,7 @@ class SubOrdersTable(BaseDB):
                 [suborder_id] = cursor.fetchone()
         self.conn.close()
         SubOrdersTable()._check_open_close_suborder(row['id_orders'])
-        logging.info("Поручение добавлено")
+        logger.info("Поручение добавлено")
         return suborder_id
 
     def delete_suborder_row(self, order_id: str, suborder_id: str) -> None:
@@ -381,7 +377,7 @@ class SubOrdersTable(BaseDB):
                 cursor.execute(str(q))
         self.conn.close()
         SubOrdersTable()._check_open_close_suborder(order_id)
-        logging.info(f'Строка с id {suborder_id} "удалена" из suborders.')
+        logger.info(f'Строка с id {suborder_id} "удалена" из suborders.')
 
     def get_delay_suborders(self, days: int = 0) -> dict[str, str] | None:
         """
@@ -482,7 +478,7 @@ class UsersTable(BaseDB):
                 try:
                     cursor.execute(str(q))
                 except psycopg2.errors.UniqueViolation as e:
-                    logging.warning(f'Пользватель {user["user_name"]} уже имеется в базе.')
+                    logger.warning(f'Пользватель {user["user_name"]} уже имеется в базе.')
         self.conn.close()
 
     def select_users(self, users: list[str]) -> list[User]:
@@ -526,9 +522,9 @@ class UsersTable(BaseDB):
                     try:
                         cursor.execute(str(q))
                     except psycopg2.errors.UniqueViolation as e:
-                        logging.info(f'Пользватель {row["user_name"]} уже имеется в базе.')
+                        logger.info(f'Пользватель {row["user_name"]} уже имеется в базе.')
         self.conn.close()
-        logging.info(f"Таблица пользователей обновлена")
+        logger.info(f"Таблица пользователей обновлена")
 
 
 class Reports(BaseDB):

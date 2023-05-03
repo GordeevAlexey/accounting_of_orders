@@ -1,7 +1,11 @@
-
 from database.pg_db import SubOrdersTable
 from send_email import Email
 from database.utils import BodyMessage
+import logging
+from logger.logger import *
+
+
+logger = logging.getLogger(__name__)
 
 
 class Reminder:
@@ -14,7 +18,6 @@ class Reminder:
 
     @staticmethod
     def remind_to_employee() -> None:
-        print("Напоминалка сработала!")
         Reminder._form_and_send(days=3)
         Reminder._form_and_send()
     
@@ -26,9 +29,9 @@ class Reminder:
             message = BodyMessage.CRITICAL_DELAY
 
         delay_orders = SubOrdersTable().get_delay_suborders(days)
-        print(delay_orders)
         if delay_orders:
-            for order in delay_orders:
-                for _, email in order['employee']:
-                    to = email
-                    Email._send(to, message.format(suborder_id=order['id']))
+            logger.info(f"Сработало напоминание по незакрытым поручениям: {delay_orders}")
+            [
+                Email._send(email, message.format(suborder_id=order['id']))
+                for order in delay_orders for _, email in order['employee'] 
+            ]

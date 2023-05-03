@@ -10,12 +10,11 @@ from send_email import Email
 from typing import Optional
 import psycopg2
 import logging
+from logger.logger import *
 
-logging.basicConfig(
-    filename='logs.log', filemode='w',
-    format='[%(levelname)s - %(asctime)s] %(name)s - %(message)s',
-    datefmt='%d.%m.%Y %H:%M:%S'
-)
+
+logger = logging.getLogger(__name__)
+
 
 SUBORDERS_HEADER = (
     "id_orders",
@@ -138,21 +137,20 @@ class ExecutedOfThePeriodData:
         ).where(
             self.orders_table.id.isin(orders_id)
         )
-        orders = rawrows_to_reportrows(ORDERS_HEADER, OrdersTable().execute_query(str(q)), ReportOrderRow)
-        # try:
-        #     orders = rawrows_to_reportrows(ORDERS_HEADER, OrdersTable().execute_query(str(q)), ReportOrderRow)
-        # #тут надо что-то придумать, как доджить это исключение
-        # except psycopg2.errors.SyntaxError as e:
-        #     print(f"Скорее всего за период {self.start_period} - {self.end_period} данных не найдено! Ошибка -> {str(e)}")
-        #     orders, suborders = [ReportOrderRow()], [ReportSuborderRow]
-        #     # raise Exception(f"Скорее всего за период {self.start_period} - {self.end_period} данных не найдено! Ошибка -> {str(e)}")
+        # orders = rawrows_to_reportrows(ORDERS_HEADER, OrdersTable().execute_query(str(q)), ReportOrderRow)
+        try:
+            orders = rawrows_to_reportrows(ORDERS_HEADER, OrdersTable().execute_query(str(q)), ReportOrderRow)
+        #тут надо что-то придумать, как доджить это исключение
+        except psycopg2.errors.SyntaxError as e:
+            logger.error(f"Скорее всего за период {self.start_period} - {self.end_period} данных не найдено! Ошибка -> {str(e)}")
+            orders, suborders = [ReportOrderRow()], [ReportSuborderRow]
+            # raise Exception(f"Скорее всего за период {self.start_period} - {self.end_period} данных не найдено! Ошибка -> {str(e)}")
         return orders, suborders
 
 
 class ExecutedOfThePeriod:
 
     def __init__(self, start_period: datetime, end_period: datetime, wb: Workbook) -> None:
-    # def __init__(self, start_period: datetime, end_period: datetime) -> None:
         self.start_period = start_period
         self.end_period = end_period
         self.srp = datetime.strptime(start_period, "%Y-%m-%d").strftime("%d.%m.%Y")
@@ -286,7 +284,6 @@ class ApprovedForThePeriod:
         self.end_period = end_period
         self.srp = datetime.strptime(start_period, "%Y-%m-%d").strftime("%d.%m.%Y")
         self.erp = datetime.strptime(end_period, "%Y-%m-%d").strftime("%d.%m.%Y")
-        # self.wb = wb
         self.wb = Workbook()
         self.ws = self.wb.active
         self.ws.title = "Утвержденные за период"
@@ -370,27 +367,18 @@ class ApprovedForThePeriod:
     def form(self) -> Workbook:
         self._data_to_sheet()
         self._apply_styles()
-        logging.info(f'Отчет об утвержденных за период {self.srp}-{self.erp} ВРД')
+        logger.info(f'Отчет об утвержденных за период {self.srp}-{self.erp} ВРД')
         return self.wb
 
 
 class WeeklyReport:
     def __init__(self) -> None:
-        # self.report_date = datetime.today()
+        self.report_date = datetime.today()
         self.time_to_report = False
-        # if self.report_date.weekday() == 4:
-        #     self.time_to_report = True
-        #     self.start_report_period = self.report_date - timedelta(days=11)
-        #     self.end_report_period = self.start_report_period + timedelta(days=4)
-        #     self.start_report_period = self.start_report_period.strftime("%Y-%m-%d")
-        #     self.end_report_period = self.end_report_period.strftime("%Y-%m-%d")
-        #     self.output = BytesIO()
-        #     self.wb = Workbook()
-        self.report_date = datetime.strptime("28.04.2023", "%d.%m.%Y")
         if self.report_date.weekday() == 4:
             self.time_to_report = True
             self.start_report_period = self.report_date - timedelta(days=11)
-            self.end_report_period = self.start_report_period + timedelta(days=4)
+            self.end_report_period = self.start_report_period + timedelta(days=6)
             self.start_report_period = self.start_report_period.strftime("%Y-%m-%d")
             self.end_report_period = self.end_report_period.strftime("%Y-%m-%d")
             self.output = BytesIO()
@@ -426,4 +414,4 @@ class WeeklyReport:
                 f"""weekly_report {srp}-{erp}""",
                 self.form_executed_for_the_period()
             )
-            print(f'Сработало -> {datetime.now().strftime("%d.%m.%Y %H:%M:%S")}')
+            logger.info(f'Отчет отправлен за период -> {srp}-{erp}.')
