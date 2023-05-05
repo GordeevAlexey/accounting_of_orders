@@ -1,8 +1,19 @@
-out = {"id": "123"}
-table = {"id": "123", "date": "2022-11-15", "comment": None}
-data = {"id": "123", "date": "2022-11-22"}
+from pydantic import BaseModel, Field
+from typing import Optional
 
-for t, d in zip(table.items(), data.items()):
-    out |= dict([d])
 
-print(out)
+
+class A(BaseModel):
+    _id: Optional[str] = Field(default=None, alias="id")
+    status: str
+
+    class Config:
+        allow_population_by_field_name = True
+
+
+
+a = A(_id='213123123', status="ok")
+print(a)
+print(a.dict(by_alias=True))
+
+

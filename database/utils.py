@@ -60,6 +60,10 @@ class Action(str, Enum):
     CLOSE = "close"
     DELAY = "delay"
 
+def employees_to_string(order: dict):
+    for key in ("initiator", "approving_employee", "employee"):
+        order[key] = ', '.join(order[key])
+
 
 def date_formatter(json: dict[str, Any]) -> dict:
     if not json:

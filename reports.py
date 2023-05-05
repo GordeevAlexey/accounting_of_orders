@@ -137,7 +137,6 @@ class ExecutedOfThePeriodData:
         ).where(
             self.orders_table.id.isin(orders_id)
         )
-        # orders = rawrows_to_reportrows(ORDERS_HEADER, OrdersTable().execute_query(str(q)), ReportOrderRow)
         try:
             orders = rawrows_to_reportrows(ORDERS_HEADER, OrdersTable().execute_query(str(q)), ReportOrderRow)
         #тут надо что-то придумать, как доджить это исключение

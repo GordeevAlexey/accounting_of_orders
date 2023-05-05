@@ -203,7 +203,7 @@ class OrdersTable(BaseDB):
         Данный метод сначала помечает удаленным конкретный приказ по id,
         далее все его подзадачи.
         """
-        id = id.decode('utf-8')
+        # id = id.decode('utf-8')
         q = Query.update(self.table).where(self.table.id == id)\
             .set('deleted', True)
 

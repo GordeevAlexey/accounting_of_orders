@@ -1,14 +1,14 @@
 from database.pg_db import OrdersTable, SubOrdersTable, UsersTable, Reports
 
 import uvicorn
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 from starlette.templating import Jinja2Templates
 
 from send_email import Email
-from database.utils import Action
+from database.utils import Action, employees_to_string
 from reminder_schedule import Reminder
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -17,6 +17,7 @@ from apscheduler.triggers.combining import OrTrigger
 from reports import WeeklyReport
 import logging
 from logger.logger import *
+from database.data import *
 
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 templates = Jinja2Templates(directory="static", autoescape=False, auto_reload=True)
+
+
+@app.post("/update_order")
+async def update_order(order=Depends(Order)):
+    o = order.dict()
+    employees_to_string(o)
+    OrdersTable().update_order(o)
+    return RedirectResponse("/", status_code=303)
+
+
+@app.post("/delete_order")
+async def delete_order(id: str):
+    OrdersTable().delete_order_row(id)
+    return RedirectResponse("/", status_code=303)
 
 
 @app.post("/add_order")
@@ -64,6 +79,12 @@ async def add_order(issue_idx: str = Form(),
         }
 
     OrdersTable().add_order(data)
+# @app.post("/add_order")
+# async def add_order(order = Depends(NewOrder)):
+#     o = order.dict()
+#     print(o)
+#     employees_to_string(o)
+#     OrdersTable().add_order(o)
     return RedirectResponse("/", status_code=303)
 
 
@@ -188,7 +209,7 @@ async def startup():
     try:
         trigger = CronTrigger(day_of_week='fri', hour=7, minute=30)
         scheduler.add_job(
-            func=WeeklyReport().send_report,
+            WeeklyReport().send_report,
             trigger=trigger,
             id="weekly_report",
             replace_existing=True,
@@ -202,6 +223,7 @@ if __name__ == "__main__":
         "main:app",
             host="0.0.0.0",
             port=8004,
-            reload=True
+            reload=True,
+            log_level="error"
     )
         
