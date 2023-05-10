@@ -84,20 +84,6 @@ class OrdersTable(BaseDB):
         finally:
             cursor.close()
 
-    def get_orders_table(self) -> JsonList:
-        """Полная выгрузка"""
-        headers = OrdersTable()._get_orders_header()
-        q = Query.from_(self.table).select(self.table.star)\
-            .where(self.table.deleted == False)
-        with self.conn:
-            with self.conn.cursor() as cursor:
-                cursor.execute(str(q))
-                orders = cursor.fetchall()
-                result = [{k: v for k, v in zip(headers, row)} for row in orders]
-                result = list(map(date_formatter, result))
-        self.conn.close()
-        return json.dumps(result, default=str)
-
     def get_orders_table_pg_bar(self) -> json:
         """
          Полная выгрузка плюс инфа для прогресс бара

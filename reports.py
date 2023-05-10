@@ -1,16 +1,17 @@
 from io import BytesIO
-from database.pg_db import OrdersTable, SubOrdersTable
+from database.pg_db import BaseDB
 from datetime import datetime, timedelta
-from pypika import Query, Table
+# from pypika import Query, Table
 from database.utils import *
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
 from openpyxl.utils import get_column_letter
 from send_email import Email
-from typing import Optional
-import psycopg2
+from typing import Any, Callable
+# import psycopg2
 import logging
 from logger.logger import *
+
 
 
 logger = logging.getLogger(__name__)
@@ -57,94 +58,36 @@ REPORT_HEADER = (
 REPORT_HEADER_WIDTH = (17, 13, 23, 43, 40, 40, 40, 18, 45, 40, 18, 35)
 
 
-class ReportOrderRow(NamedTuple):
-    id: Optional[str] = None
-    issue_type: Optional[str] = None
-    issue_idx: Optional[str] = None
-    approving_date: Optional[datetime] = None
-    title: Optional[str] = None
-    initiator: Optional[str] = None
-    approving_employee: Optional[str] = None
-    employee: Optional[str] = None
-    deadline: Optional[datetime] = None
-    status_code: Optional[str] = None
-    comment: Optional[str] = None
+def data_to_excel(ws, _fill_row: Callable,  data: list[tuple[Any]]) -> None:
+        _idx = 0
+        _id = None
+        start = 7 if _fill_row.__qualname__.startswith("Approved") else 4
 
-
-class ReportSuborderRow(NamedTuple):
-    id: Optional[str] = None
-    id_orders: Optional[str] = None
-    content: Optional[str] = None
-    deadline: Optional[datetime] = None
-    status_code: Optional[str] = None
-    employee: Optional[str] = None
-    comment: Optional[str] = None
-    close_date: Optional[str] = None
-
-
-def rawrows_to_reportrows(headers: tuple, rows: list[tuple], row_type: Any) -> tuple[Any]:
-    """
-    Преобразует строки из бд в ReoportRow
-    """
-    rows = map(date_formatter, [{k: v for k, v in zip(headers, row)} for row in rows])
-    rows = tuple(row_type(**row) for row in rows)
-    return rows
-
-
-class ExecutedOfThePeriodData:
-    """
-    Осуществляет выборку ВРД со сроками исполнения за период из БД
-    """
-    orders_table = Table('orders')
-    suborders_table = Table('suborders')
-
-    def __init__(self, start_period: datetime, end_period: datetime):
-        self.start_period = start_period
-        self.end_period = end_period
-
-    def _get_executed_suborders(self) -> tuple[ReportOrderRow]:
-        q = Query.from_(self.suborders_table).select(
-            self.suborders_table.id_orders,
-            self.suborders_table.content,
-            self.suborders_table.deadline,
-            self.suborders_table.status_code,
-            self.suborders_table.employee,
-            self.suborders_table.comment,
-            self.suborders_table.close_date,
-        ).where(
-            (self.suborders_table.deleted == False) &
-            (self.suborders_table.deadline[self.start_period:self.end_period])
-        )
-        suborders = rawrows_to_reportrows(SUBORDERS_HEADER, SubOrdersTable().execute_query(str(q)), ReportSuborderRow)
-        return suborders
-
-    def get_data(self) -> tuple[tuple[Any]]:
-        suborders = self._get_executed_suborders()
-        # Тут множество надо понаблюдать за порядком id_orders
-        orders_id = {row.id_orders for row in suborders}
-        q = Query.from_(self.orders_table).select(
-            self.orders_table.id,
-            self.orders_table.issue_type,
-            self.orders_table.issue_idx,
-            self.orders_table.approving_date,
-            self.orders_table.title,
-            self.orders_table.initiator,
-            self.orders_table.approving_employee,
-            self.orders_table.employee,
-            self.orders_table.deadline,
-            self.orders_table.status_code,
-            self.orders_table.comment
-        ).where(
-            self.orders_table.id.isin(orders_id)
-        )
-        try:
-            orders = rawrows_to_reportrows(ORDERS_HEADER, OrdersTable().execute_query(str(q)), ReportOrderRow)
-        #тут надо что-то придумать, как доджить это исключение
-        except psycopg2.errors.SyntaxError as e:
-            logger.error(f"Скорее всего за период {self.start_period} - {self.end_period} данных не найдено! Ошибка -> {str(e)}")
-            orders, suborders = [ReportOrderRow()], [ReportSuborderRow]
-            # raise Exception(f"Скорее всего за период {self.start_period} - {self.end_period} данных не найдено! Ошибка -> {str(e)}")
-        return orders, suborders
+        for row_idx, tup in enumerate(data, start):
+            if _idx != 0:
+                row_idx = _idx + 1
+            if _id is None or tup[0] != _id:
+                _id = tup[0]
+                ws[f'A{row_idx}'] = tup[1]
+                ws[f'B{row_idx}'] = tup[2]
+                ws[f'C{row_idx}'] = datetime.strftime(tup[3], "%d.%m.%Y")
+                ws[f'D{row_idx}'] = tup[4]
+                ws[f'E{row_idx}'] = tup[5]
+                ws[f'F{row_idx}'] = tup[6]
+                ws[f'G{row_idx}'] = tup[7]
+                ws[f'H{row_idx}'] = datetime.strftime(tup[8], "%d.%m.%Y")
+                ws[f'J{row_idx}'] = tup[9]
+                ws[f'K{row_idx}'] = tup[10]
+                row_idx += 1
+            _fill_row(row_idx, tup[11:])
+            ws[f'A{row_idx}'] = 'Поручение'
+            ws[f'B{row_idx}'] = tup[2]
+            ws[f'G{row_idx}'] = tup[15]
+            ws[f'H{row_idx}'] = datetime.strftime(tup[13], "%d.%m.%Y")
+            ws[f'I{row_idx}'] = tup[12]
+            ws[f'J{row_idx}'] = tup[14]
+            ws[f'K{row_idx}'] = tup[16]
+            _idx = row_idx
 
 
 class ExecutedOfThePeriod:
@@ -159,43 +102,50 @@ class ExecutedOfThePeriod:
         self.ws = wb['Исполненные за период']
 
     def _fill_row(self, row_idx: int, row: Any) -> None:
-        if row.status_code == "На исполнении":
+        if row[3] == "На исполнении":
             _fill = PatternFill(fill_type='solid', fgColor="E6B9B8")
             for col_idx in range(1, self.ws.max_column + 1):
                 self.ws.cell(row_idx, col_idx).fill = _fill
 
+    def _get_data(self):
+        data = BaseDB().execute_query(
+            f"""
+            select 
+            o.id,
+            o.issue_type,
+            o.issue_idx,
+            o.approving_date,
+            o.title,
+            o.initiator,
+            o.approving_employee,
+            o.employee,
+            o.deadline,
+            o.status_code,
+            o.comment,
+            s.id_orders,
+            s.content,
+            s.deadline,
+            s.status_code,
+            s.employee,
+            s.comment,
+            s.close_date
+            from orders as o,
+            suborders as s
+            where s.deadline >= '{self.start_period}'
+            and s.deadline <= '{self.end_period}'
+            and s.id_orders=o.id and s.deleted is false order by o.issue_idx 
+            """
+        )
+        return data
+
     def _data_to_sheet(self) -> None:
-        orders, suborders = ExecutedOfThePeriodData(self.start_period, self.end_period).get_data()
         self.ws[
             "A1"] = f"Внутренние распорядительные документы со сроками исполнения в период с {self.srp} по {self.erp}"
         self.ws['A2'] = None
 
         self.ws.append(REPORT_HEADER)
-        # Это пиздец, переделать
-        _idx = 0
-        for row_idx, order in enumerate(orders, 4):
-            if _idx != 0:
-                row_idx = _idx + 1
-            self.ws[f'A{row_idx}'] = order.issue_type
-            self.ws[f'B{row_idx}'] = order.issue_idx
-            self.ws[f'C{row_idx}'] = order.approving_date
-            self.ws[f'D{row_idx}'] = order.title
-            self.ws[f'E{row_idx}'] = order.initiator
-            self.ws[f'F{row_idx}'] = order.approving_employee
-            self.ws[f'G{row_idx}'] = order.employee
-            self.ws[f'H{row_idx}'] = order.deadline
-            self.ws[f'J{row_idx}'] = order.status_code
-            self.ws[f'K{row_idx}'] = order.comment
-            for subrow_idx, suborder in enumerate(suborders, row_idx + 1):
-                self._fill_row(subrow_idx, suborder)
-                self.ws[f'A{subrow_idx}'] = 'Поручение'
-                self.ws[f'B{subrow_idx}'] = order.issue_idx
-                self.ws[f'G{subrow_idx}'] = suborder.employee
-                self.ws[f'H{subrow_idx}'] = suborder.deadline
-                self.ws[f'I{subrow_idx}'] = suborder.content
-                self.ws[f'J{subrow_idx}'] = suborder.status_code
-                self.ws[f'K{subrow_idx}'] = suborder.comment
-                _idx = subrow_idx
+        data = self._get_data()
+        data_to_excel(self.ws, self._fill_row, data)
 
     def _apply_styles(self) -> None:
         self._data_to_sheet()
@@ -224,55 +174,6 @@ class ExecutedOfThePeriod:
         return self.wb
 
 
-class ApprovedPeriodData:
-    """
-    Осуществляет выборку утвержденных ВРД за период из БД
-    """
-    orders_table = Table('orders')
-    suborders_table = Table("suborders")
-
-    def __init__(self, start_period: datetime, end_period: datetime) -> None:
-        self.start_report_period = start_period
-        self.end_report_period = end_period
-
-    def _get_orders(self) -> tuple[Any]:
-        q = Query.from_(self.orders_table).select(
-            self.orders_table.id,
-            self.orders_table.issue_type,
-            self.orders_table.issue_idx,
-            self.orders_table.approving_date,
-            self.orders_table.title,
-            self.orders_table.initiator,
-            self.orders_table.approving_employee,
-            self.orders_table.employee,
-            self.orders_table.deadline,
-            self.orders_table.status_code,
-            self.orders_table.comment
-        ).where(
-            self.orders_table.approving_date[self.start_report_period:self.end_report_period]
-        )
-        orders = rawrows_to_reportrows(ORDERS_HEADER, OrdersTable().execute_query(str(q)), ReportOrderRow)
-        return orders
-
-    def get_data(self) -> tuple[Any]:
-        orders = self._get_orders()
-        orders_ids = [row.id for row in orders]
-        q = Query.from_(self.suborders_table).select(
-            self.suborders_table.id_orders,
-            self.suborders_table.content,
-            self.suborders_table.deadline,
-            self.suborders_table.status_code,
-            self.suborders_table.employee,
-            self.suborders_table.comment,
-            self.suborders_table.close_date,
-        ).where(
-            (self.suborders_table.id_orders.isin(orders_ids)) &
-            (self.suborders_table.deleted == False)
-        )
-        suborders = rawrows_to_reportrows(SUBORDERS_HEADER, SubOrdersTable().execute_query(str(q)), ReportSuborderRow)
-        return orders, suborders
-
-
 class ApprovedForThePeriod:
     """
     Отчет об утвержденных за период ВРД
@@ -288,16 +189,47 @@ class ApprovedForThePeriod:
         self.ws.title = "Утвержденные за период"
 
     def _fill_row(self, row_idx: int, row: Any) -> None:
-        if row.status_code == "На исполнении":
+        if row[3] == "На исполнении":
             _fill = PatternFill(fill_type='solid', fgColor="E6B9B8")
-        elif row.status_code == "Заершено":
+        elif row[3] == "Заершено":
             _fill = PatternFill(fill_type='solid', fgColor="8DB4E3")
-        elif row.deadline == datetime.now().date().replace(month=12, day=31).strftime("%d.%m.%Y"):
+        elif row[2] == datetime.now().date().replace(month=12, day=31).strftime("%d.%m.%Y"):
             _fill = PatternFill(fill_type='solid', fgColor="D7E4BC")
         else:
             _fill = PatternFill(fill_type='solid', fgColor="FFFFFF")
         for col_idx in range(1, self.ws.max_column + 1):
             self.ws.cell(row_idx, col_idx).fill = _fill
+
+    def _get_data(self):
+        data = BaseDB().execute_query(
+            f"""
+            select 
+            o.id,
+            o.issue_type,
+            o.issue_idx,
+            o.approving_date,
+            o.title,
+            o.initiator,
+            o.approving_employee,
+            o.employee,
+            o.deadline,
+            o.status_code,
+            o.comment,
+            s.id_orders,
+            s.content,
+            s.deadline,
+            s.status_code,
+            s.employee,
+            s.comment,
+            s.close_date
+            from orders as o,
+            suborders as s
+            where o.approving_date >= '{self.start_period}'
+            and o.approving_date <= '{self.end_period}'
+            and s.id_orders=o.id and s.deleted is false order by o.issue_idx 
+            """
+        )
+        return data
 
     def _data_to_sheet(self) -> None:
         self.ws["A1"] = f"Внутренние распорядительные документы, утвержденные в период с {self.srp} по {self.erp}"
@@ -306,33 +238,8 @@ class ApprovedForThePeriod:
         self.ws["B4"] = '- завершено'
         self.ws['B5'] = None
         self.ws.append(REPORT_HEADER)
-        orders, suborders = ApprovedPeriodData(self.start_period, self.end_period).get_data()
-        _idx = 0
-        for row_idx, order in enumerate(orders, 7):
-            if _idx != 0:
-                row_idx = _idx + 1
-            self._fill_row(row_idx, order)
-            self.ws[f'A{row_idx}'] = order.issue_type
-            self.ws[f'B{row_idx}'] = order.issue_idx
-            self.ws[f'C{row_idx}'] = order.approving_date
-            self.ws[f'D{row_idx}'] = order.title
-            self.ws[f'E{row_idx}'] = order.initiator
-            self.ws[f'F{row_idx}'] = order.approving_employee
-            self.ws[f'G{row_idx}'] = order.employee
-            self.ws[f'H{row_idx}'] = order.deadline
-            self.ws[f'J{row_idx}'] = order.status_code
-            self.ws[f'K{row_idx}'] = order.comment
-
-            for subrow_idx, suborder in enumerate(suborders, row_idx + 1):
-                self._fill_row(subrow_idx, suborder)
-                self.ws[f'A{subrow_idx}'] = 'Поручение'
-                self.ws[f'B{subrow_idx}'] = order.issue_idx
-                self.ws[f'G{subrow_idx}'] = suborder.employee
-                self.ws[f'H{subrow_idx}'] = suborder.deadline
-                self.ws[f'I{subrow_idx}'] = suborder.content
-                self.ws[f'J{subrow_idx}'] = suborder.status_code
-                self.ws[f'K{subrow_idx}'] = suborder.comment
-                _idx = subrow_idx
+        data = self._get_data()
+        data_to_excel(self.ws, self._fill_row, data)
 
     def _apply_styles(self):
         self.ws.merge_cells('A1:K1')
@@ -372,8 +279,11 @@ class ApprovedForThePeriod:
 
 class WeeklyReport:
     def __init__(self) -> None:
-        self.report_date = datetime.today()
+        # self.report_date = datetime.today()
+        self.report_date = datetime(2023,5,5)
         self.time_to_report = False
+        self.wb = None
+
         if self.report_date.weekday() == 4:
             self.time_to_report = True
             self.start_report_period = self.report_date - timedelta(days=11)

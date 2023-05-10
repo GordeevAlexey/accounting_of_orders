@@ -36,7 +36,7 @@ class BodyMessage(str, Enum):
         """
     WARNING_DELAY = """
         </pre>
-        До окончания срока исполнения задачи осталось {days}!<br>
+        До окончания срока исполнения задачи осталось 3 дня!<br>
         Перейдите по <a href="http://192.168.200.92:8004/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>"""
@@ -59,6 +59,7 @@ class Action(str, Enum):
     DELETE = "delete"
     CLOSE = "close"
     DELAY = "delay"
+
 
 def employees_to_string(order: dict):
     for key in ("initiator", "approving_employee", "employee"):
