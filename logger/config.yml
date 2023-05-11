@@ -11,10 +11,13 @@ handlers:
     formatter: simple
     stream: ext://sys.stdout
   file:
-    class: logging.FileHandler
+    class: logging.handlers.RotatingFileHandler
     level: INFO
     formatter: simple
     filename: logs.log
+    maxBytes: 10485760 
+    backupCount: 0
+    encoding: utf8
 loggers:
   simpleExample:
     level: INFO

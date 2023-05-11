@@ -279,8 +279,7 @@ class ApprovedForThePeriod:
 
 class WeeklyReport:
     def __init__(self) -> None:
-        # self.report_date = datetime.today()
-        self.report_date = datetime(2023,5,5)
+        self.report_date = datetime.today()
         self.time_to_report = False
         self.wb = None
 
@@ -309,7 +308,6 @@ class WeeklyReport:
         res = self.output.getvalue()
         self.output.close()
         self.output = BytesIO()
-        #Если убрать, то отчет становится накопительный и начинает весить очень много.
         return res
 
     def send_report(self) -> None:
