@@ -40,7 +40,7 @@
             font-variant: small-caps;
             }
 
-            .input_css, select {
+            .input_css, select{
                 font-variant: small-caps;
                 width:400px;
                 padding:25px;
@@ -126,7 +126,7 @@
 <div id="orders_manual">
     <h1>Реестр документов</h1>
     <input type="button" class="input_css" value="Добавить документ" onclick="showModalWin('add_order')">
-    <input id="update_border_btn" class="input_css" type="button" value="Редактировать приказ" onclick="showModalWin('update_order')" hidden>
+    <input id="update_order_btn" class="input_css" type="button" value="Редактировать приказ" onclick="showModalWin('update_order')" hidden>
 </div>
 
 <div id="orders"></div>
@@ -163,6 +163,33 @@
         <input name="reference" class="input_css" type="link" placeholder="Ссылка">
 
         <input type="submit" class="input_css" name="submit" value="Сохранить">
+
+    </form>
+</div>
+
+<div style="text-align: center" id="update_order" class="modalwin">
+<!--    <form id="update_order_form" action="" method="post" onsubmit="return addActionForm('update_order', 'update_order');">-->
+    <form id="update_order_form">
+        <select class="js-example-basic-multiple" name="issue_type" id="issue_type_up_order">
+            <option value="Приказ" selected>Приказ</option>
+            <option value="Распоряжение" selected>Распоряжение</option>
+        </select>
+        <input name="issue_idx" id="issue_idx" class="input_css" type="text" placeholder="Номер №">
+        <input name="approving_date" id="approving_date" class="input_css" type="date" >
+        <input name="title" id="title" class="input_css" type="text" placeholder="Тема">
+
+        <select class="initiator" name="initiator" id="initiator_up_order" multiple="multiple"></select>
+        <br><br>
+        <select class="approving_employee" name="approving_employee" id="approving_employee_up_order" multiple="multiple"></select>
+        <br><br>
+        <select class="employee_order" name="employee_order" id="employee_order_up_order" multiple="multiple"></select>
+
+        <input name="deadline" id="deadline" class="input_css" type="date" >
+        <input name="comment" id="comment" class="input_css" type="text" placeholder="Примечание">
+        <input name="reference" id="reference" class="input_css" type="link" placeholder="Ссылка">
+
+<!--        <input type="submit" class="input_css" name="submit" value="Сохранить">-->
+        <input type="button" class="input_css" name="submit" value="Сохранить" onclick="update_order()">
     </form>
 </div>
 
@@ -213,6 +240,15 @@ $(document).ready(function() {
     $('#employee_up').select2({
         placeholder: "Выбирите исполнителя"});
 
+    $('#initiator_up_order').select2({
+        placeholder: "Выбирите инициатора"});
+
+    $('#approving_employee_up_order').select2({
+        placeholder: "Выбирите утверждающего руководителя"});
+
+    $('#employee_order_up_order').select2({
+        placeholder: "Выбирите ответственного исполнителя"});
+
     function link(cell, formatterParams){
         var url = cell.getValue();
         return url;
@@ -249,6 +285,10 @@ $(document).ready(function() {
 
         rowClick:function(e, row){
 
+            updating_data_form_order(row)
+
+            $("#update_order_btn").show(300)
+
             $("#current_suborder_id").val("")
             $("#close_task").hide(300)
             $("#delete_suborder_btn").hide(300)
@@ -274,8 +314,6 @@ $(document).ready(function() {
                                 { title: 'Состояние', field:"condition", formatter:"tickCross"},
                                 { title: 'Комментарии', field: 'comment'}
                              ],
-
-
 
                     rowClick:function(e, row){
 
@@ -305,6 +343,46 @@ $(document).ready(function() {
     });
 });
 
+function updating_data_form_order(row) {
+
+    var data_row = row.getData();
+
+    $('#issue_type_up_order').val(data_row.issue_type)
+
+    $('#issue_idx').val(data_row.issue_idx)
+
+    let myDate1 = data_row.deadline;
+    let str1 = myDate1.replace(/(\d+)\.(\d+)\.(\d+)/, '$3-$2-$1');
+    $("#approving_date").val(str1).change();
+
+    $('#title').val(data_row.title);
+
+    var array = data_row.initiator.split(", ");
+    $('#initiator_up_order').val(array).change();
+
+    var array = data_row.approving_employee.split(", ");
+    $('#approving_employee_up_order').val(array).change();
+
+    var array = data_row.employee.split(", ");
+    $('#employee_order_up_order').val(array).change();
+
+    let myDate2 = data_row.deadline;
+    let str2 = myDate2.replace(/(\d+)\.(\d+)\.(\d+)/, '$3-$2-$1');
+    $("#deadline").val(str2).change();
+
+    $('#comment').val(data_row.comment);
+
+    $('#reference').val(data_row.reference);
+
+
+
+<!--    let myDate = row.getData().deadline;-->
+<!--    let str = myDate.replace(/(\d+)\.(\d+)\.(\d+)/, '$3-$2-$1');-->
+
+<!--    $("#deadline_up").val(str).change();-->
+<!--    $("#content_up").val(row.getData().content);-->
+}
+
 function fillingUpdatingFields(row) {
 
     var string = row.getData().employee;
@@ -333,12 +411,49 @@ function hide_element_suborder() {
     $("#update_suborder_btn").hide(300)
 }
 
+async function update_order(){
+
+    let url = new URL('http://192.168.200.92:8004/update_order');
+
+    url.searchParams.set('id', document.getElementById('current_order_id').value)
+    url.searchParams.set('deadline', document.getElementById('deadline').value)
+    url.searchParams.set('comment', document.getElementById('comment').value)
+    url.searchParams.set('issue_idx', document.getElementById('issue_idx').value)
+    url.searchParams.set('issue_type', document.getElementById('issue_type_up_order').value)
+    url.searchParams.set('approving_date', document.getElementById('approving_date').value)
+    url.searchParams.set('title', document.getElementById('title').value)
+
+    let response = await fetch(url, {
+        method: 'POST',
+        headers:{
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            'employee': $('#employee_order_up_order').val(),
+            'initiator': $('#initiator_up_order').val(),
+            'approving_employee': $('#approving_employee_up_order').val()
+        })
+    });
+
+    if (response.ok) {
+        location.reload();
+    } else {
+        alert("Ошибка HTTP: " + response.status);
+    }
+
+
+}
+
 function addActionForm() {
     var order_id = escape(document.getElementById('current_order_id').value);
     var suborder_id = escape(document.getElementById('current_suborder_id').value);
 
-    if (arguments[1] == 'add_suborder' || arguments[1] == 'add_suborder'){
+    if (arguments[1] == 'add_suborder'){
         document.getElementById(arguments[0]).action = '/' + arguments[1] + '/' + order_id
+    } else if (arguments[1] == 'update_suborder') {
+        document.getElementById(arguments[0]).action = '/' + arguments[1] + '/' + order_id + '/' + suborder_id
+    } else if (arguments[1] == 'update_order') {
+        document.getElementById(arguments[0]).action = '/update_order'
     } else {
         document.getElementById(arguments[0]).action = '/' + arguments[1] + '/' + order_id + '/' + suborder_id + '/' + arguments[2]
     }
@@ -373,6 +488,15 @@ function deleteSuborder() {
             };
         }
 
+    function hiddenModalWin() {
+        var modalWin = document.getElementById(arguments[0]);
+        modalWin.style.display = 'none';
+
+        var darkLayer = document.createElement('div');
+        darkLayer.id = 'shadow';
+        darkLayer.parentNode.removeChild(darkLayer);
+    }
+
 
 </script>
 
@@ -381,7 +505,7 @@ function deleteSuborder() {
     var users = $.get( "http://192.168.200.92:8004/get_users", function(response) {
         $.each(JSON.parse(response), function(key, value) {
 
-            $('#approving_employee, #initiator, #employee_order, #employee_sub_order, #employee_up')
+            $('#approving_employee, #initiator, #employee_order, #employee_sub_order, #employee_up, #initiator_up_order, #approving_employee_up_order, #employee_order_up_order')
             .append($("<option></option>")
                         .attr("value", value)
                         .text(value));
