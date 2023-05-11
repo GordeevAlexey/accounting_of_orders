@@ -23,13 +23,9 @@ class Reminder:
     
     @staticmethod
     def _form_and_send(days: int=0) -> None:
-        if days:
-            message = BodyMessage.WARNING_DELAY
-        else:
-            message = BodyMessage.CRITICAL_DELAY
+        message = BodyMessage.WARNING_DELAY if days else BodyMessage.CRITICAL_DELAY
 
-        delay_orders = SubOrdersTable().get_delay_suborders(days)
-        if delay_orders:
+        if delay_orders := SubOrdersTable().get_delay_suborders(days):
             logger.info(f"Сработало напоминание по незакрытым поручениям: {delay_orders}")
             [
                 Email._send(email, message.format(suborder_id=order['id']))
