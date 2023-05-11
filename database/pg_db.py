@@ -111,7 +111,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
-                result = [{k: v for k, v in zip(headers, row)} for row in orders]
+                result = [dict(zip(headers, row)) for row in orders]
                 result = list(map(date_formatter, result))
         self.conn.close()
         return json.dumps(result, default=str)
@@ -125,7 +125,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
-                result = [{k: v for k, v in zip(headers, row)} for row in orders]
+                result = [dict(zip(headers, row)) for row in orders]
                 result = list(map(date_formatter, result))
         self.conn.close()
         return json.dumps(result, default=str)
@@ -138,7 +138,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
-                result = [{k: v for k, v in zip(headers, row)} for row in orders]
+                result = [dict(zip(headers, row)) for row in orders]
                 result = list(map(date_formatter, result))
         self.conn.close()
         return json.dumps(result, default=str)
@@ -165,7 +165,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
-                result = [{k: v for k, v in zip(headers, row)} for row in orders]
+                result = [dict(zip(headers, row)) for row in orders]
                 result = list(map(date_formatter, result))
         cursor.close()
         return json.dumps(result)
@@ -253,7 +253,7 @@ class SubOrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
                 suborders = cursor.fetchall()
-                result = [{k: v for k, v in zip(headers, row)} for row in suborders]
+                result = [dict(zip(headers, row)) for row in suborders]
                 result = list(map(date_formatter, result))
                 cursor.close()
 
@@ -270,7 +270,7 @@ class SubOrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(id_orders_query))
 
-                if all([True if row[0] == 'Завершено' else False for row in cursor.fetchall()]):
+                if all(row[0] == 'Завершено' for row in cursor.fetchall()):
                     OrdersTable().update_order({
                         'status_code': 'Завершено',
                         'id': order_id
@@ -294,13 +294,13 @@ class SubOrdersTable(BaseDB):
         table_data = json.loads(SubOrdersTable().get_suborders_table(data_for_update['id_orders']))[0]
 
         if data_for_update['employee'] != table_data['employee']:
-            data_to_update.update({"employee": data_for_update['employee']})
+            data_to_update["employee"] = data_for_update['employee']
 
         if data_for_update['deadline'] != table_data['deadline']:
-            data_to_update.update({"deadline": data_for_update['deadline']})
+            data_to_update["deadline"] = data_for_update['deadline']
 
         if data_for_update['content'] != table_data['content']:
-            data_to_update.update({"content": data_for_update['content']})
+            data_to_update["content"] = data_for_update['content']
 
         return data_to_update
 
@@ -385,7 +385,7 @@ class SubOrdersTable(BaseDB):
                 suborders = cursor.fetchall()
         self.conn.close()
         if suborders:
-            suborders = [{k: v for k,v in zip(cols, row)} for row in suborders]
+            suborders = [dict(zip(cols, row)) for row in suborders]
             suborders = list(map(date_formatter, suborders))
             for order in suborders:
                 users = UsersTable().select_users(order['employee'].split(", "))
@@ -510,7 +510,7 @@ class UsersTable(BaseDB):
                     except psycopg2.errors.UniqueViolation as e:
                         logger.info(f'Пользватель {row["user_name"]} уже имеется в базе.')
         self.conn.close()
-        logger.info(f"Таблица пользователей обновлена")
+        logger.info("Таблица пользователей обновлена")
 
 
 class Reports(BaseDB):
@@ -552,7 +552,7 @@ class Reports(BaseDB):
                 cursor.execute(str(q))
                 orders = cursor.fetchall()
 
-        result = [{k: v for k, v in zip(headers, row)} for row in orders]
+        result = [dict(zip(headers, row)) for row in orders]
         self.conn.close()
         res = json.dumps(result, default=str)
         return res 
