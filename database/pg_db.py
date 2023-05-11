@@ -510,7 +510,7 @@ class UsersTable(BaseDB):
                     except psycopg2.errors.UniqueViolation as e:
                         logger.warning(f'Пользватель {row["user_name"]} уже имеется в базе.')
         self.conn.close()
-        logger.info("Таблица пользователей обновлена")
+        logger.info("Таблица пользователей обновлена.")
 
 
 class Reports(BaseDB):

@@ -9,15 +9,13 @@ from starlette.templating import Jinja2Templates
 
 from send_email import Email
 from database.utils import Action, employees_to_string
-from reminder_schedule import Reminder
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
-from apscheduler.triggers.combining import OrTrigger
 from reports import *
 import logging
 from logger.logger import *
 from database.data import *
+from schedulers import *
 
 
 logger = logging.getLogger(__name__)
@@ -192,30 +190,12 @@ async def get_users():
 
 @app.on_event("startup")
 async def startup():
-    try:
-        trigger = OrTrigger([
-            CronTrigger(day_of_week=day, hour=6, minute=30)
-                for day in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')
-        ])
-
-        scheduler.add_job(
-            Reminder().remind_to_employee,
-            trigger=trigger,
-            id="reminder",
-            replace_existing=True,
-        )
-    except Exception as e:
-        logger.error(f"Ошибка планировщика: {e}")
-    try:
-        trigger = CronTrigger(day_of_week='fri', hour=7, minute=30)
-        scheduler.add_job(
-            WeeklyReport().send_report,
-            trigger=trigger,
-            id="weekly_report",
-            replace_existing=True,
-        )
-    except Exception as e:
-        logger.error(f"Ошибка отчета: {e}")
+    """
+    Запуск планировщиков
+    """
+    remind_to_employ(scheduler)
+    send_weekly_report(scheduler)
+    table_update(scheduler)
 
 
 if __name__ == "__main__":
