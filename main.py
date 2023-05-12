@@ -4,7 +4,7 @@ import uvicorn
 from fastapi import FastAPI, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, FileResponse
 from starlette.templating import Jinja2Templates
 
 from send_email import Email
@@ -196,6 +196,11 @@ async def startup():
     remind_to_employ(scheduler)
     send_weekly_report(scheduler)
     table_update(scheduler)
+
+@app.get("/logs")
+async def show_get_logs():
+    logger.info('Выгрузка логов.')
+    return FileResponse(path='logs.log', filename='logs.log', media_type='text/mp4')
 
 
 if __name__ == "__main__":

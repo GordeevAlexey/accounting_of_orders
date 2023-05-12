@@ -38,19 +38,23 @@ class Email:
     
     @staticmethod
     def send_weekly_report(txt_body: str, report_name: str, data: bytes) -> None:
+        #https://stackoverflow.com/questions/1546367/python-how-to-send-mail-with-to-cc-and-bcc
         msg = MIMEMultipart()
         msg['From'] = "exhorter@akcept.ru"
         msg['Subject'] = "Еженедельный отчет об исполнении ВРД"
-        msg['To'] = 'azarova@akcept.ru, husnetinova_aa@akcept.ru'
-        # msg['To'] = "sidorovich_ns@akcept.ru, gordeev_an@akcept.ru"
-        msg['Bcc'] = "sidorovich_ns@akcept.ru, gordeev_an@akcept.ru"
+        to = 'azarova@akcept.ru,husnetinova_aa@akcept.ru'
+        bcc = 'sidorovich_ns@akcept.ru,gordeev_an@akcept.ru'
+        msg['To'] = to
+        mailing_list = to.split(',') + bcc.split(',')
+
         msg.attach(MIMEText(txt_body, "plain"))
         part = MIMEBase('application', 'vnd.ms-excel')
         part.set_payload(data)
         encoders.encode_base64(part)
         part.add_header('Content-Disposition', f"attachment; filename={report_name}.xlsx")
         msg.attach(part)
+
         server = smtplib.SMTP("10.0.100.10", 25)
-        server.sendmail(msg['From'], msg['To'], msg.as_string())
+        server.sendmail(msg['From'], mailing_list, msg.as_string())
         server.quit()
 
