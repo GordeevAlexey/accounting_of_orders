@@ -8,6 +8,8 @@ from logger.logger import *
 logger = logging.getLogger(__name__)
 
 
+HOST = "http://10.0.2.47:8004"
+
 class Reminder:
     """
     Осуществляет проверку по просроченным поручениям для
@@ -28,6 +30,6 @@ class Reminder:
         if delay_orders := SubOrdersTable().get_delay_suborders(days):
             logger.info(f"Сработало напоминание по незакрытым поручениям: {delay_orders}")
             [
-                Email._send(email, message.format(suborder_id=order['id']))
+                Email._send(email, message.format(HOST=HOST,suborder_id=order['id']))
                 for order in delay_orders for _, email in order['employee'] 
             ]

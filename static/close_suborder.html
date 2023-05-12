@@ -165,7 +165,7 @@
 
     $(document).ready(function() {
 
-        url = 'http://192.168.200.92:8004/get_info_for_close_suborder/{{ suborder_id }}'
+        url = 'http://10.0.2.47:8004/get_info_for_close_suborder/{{ suborder_id }}'
         $.get(url, function(response) {
 
             var info = JSON.parse(response)[0]

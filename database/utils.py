@@ -2,19 +2,21 @@ from typing import NamedTuple, Any
 from enum import Enum
 
 
+HOST = "http://10.0.2.47:8004"
+
 class BodyMessage(str, Enum):
     ADD ="""
         <pre>
         Добрый день.<br>
         Вам назначено новое поручение.<br>
-        Перейдите по <a href="http://192.168.200.92:8004/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+        Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>"""
     UPDATE = """
         <pre>
         Добрый день.<br>
         Поручение обновлено.<br>
-        Перейдите по <a href="http://192.168.200.92:8004/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+        Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>
         """
@@ -22,7 +24,7 @@ class BodyMessage(str, Enum):
         <pre>
         Добрый день.<br>
         Поручение удалено.<br>
-        Перейдите по <a href="http://192.168.200.92:8004/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+        Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>
         """
@@ -37,13 +39,13 @@ class BodyMessage(str, Enum):
     WARNING_DELAY = """
         </pre>
         До окончания срока исполнения задачи осталось 3 дня!<br>
-        Перейдите по <a href="http://192.168.200.92:8004/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+        Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>"""
     CRITICAL_DELAY = """
         </pre>
         Срок исполнения задачи истек!<br>
-        Перейдите по <a href="http://192.168.200.92:8004/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+        Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>"""
 

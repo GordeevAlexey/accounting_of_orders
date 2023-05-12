@@ -499,18 +499,21 @@ class UsersTable(BaseDB):
         return json.dumps(result)
 
     def update_users_table(self) -> None:
-        phonebook = UsersTable.get_phone_book()
-        for row in phonebook:
-            _columns = row.keys()
-            q = Query.into(self.table).columns(*_columns).insert(*row.values())
-            with self.conn:
-                with self.conn.cursor() as cursor:
-                    try:
-                        cursor.execute(str(q))
-                    except psycopg2.errors.UniqueViolation as e:
-                        logger.warning(f'Пользватель {row["user_name"]} уже имеется в базе.')
-        self.conn.close()
-        logger.info("Таблица пользователей обновлена.")
+        try:
+            phonebook = UsersTable.get_phone_book()
+            for row in phonebook:
+                _columns = row.keys()
+                q = Query.into(self.table).columns(*_columns).insert(*row.values())
+                with self.conn:
+                    with self.conn.cursor() as cursor:
+                        try:
+                            cursor.execute(str(q))
+                        except psycopg2.errors.UniqueViolation as e:
+                            logger.warning(f'Пользватель {row["user_name"]} уже имеется в базе.')
+            self.conn.close()
+            logger.info("Таблица пользователей обновлена.")
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Не удалось обновить таблицу пользователей.\nОшибка -> {e}")
 
 
 class Reports(BaseDB):

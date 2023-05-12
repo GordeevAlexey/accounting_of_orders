@@ -7,6 +7,8 @@ from database.utils import User, Action
 from database.utils import BodyMessage
 
 
+HOST = "http://10.0.2.47:8004"
+
 class Email:
 
     @staticmethod
@@ -25,13 +27,13 @@ class Email:
     def send_info(id: str, users: list[User], action: Action):
         match action:
             case Action.ADD:
-                message = BodyMessage.ADD.format(suborder_id=id)
+                message = BodyMessage.ADD.format(HOST=HOST, suborder_id=id)
             case Action.UPDATE:
-                message = BodyMessage.UPDATE.format(suborder_id=id)
+                message = BodyMessage.UPDATE.format(HOST=HOST, suborder_id=id)
             case Action.DELETE:
-                message = BodyMessage.DELETE.format(suborder_id=id)
+                message = BodyMessage.DELETE.format(HOST=HOST, suborder_id=id)
             case Action.CLOSE:
-                message = BodyMessage.CLOSE.format(suborder_id=id)
+                message = BodyMessage.CLOSE.format(HOST=HOST, suborder_id=id)
         [Email._send(email, message) for _, email in users]
     
     @staticmethod

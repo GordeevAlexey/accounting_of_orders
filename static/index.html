@@ -117,7 +117,7 @@
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/js/tabulator.min.js"></script>
-<script type="text/javascript" src="http://192.168.200.92:8004/sandbox/static/tabulator.js"></script>
+<script type="text/javascript" src="http://10.0.2.47:8004/sandbox/static/tabulator.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
@@ -255,7 +255,7 @@ $(document).ready(function() {
     }
 
 
-    var url = 'http://192.168.200.92:8004/get_order';
+    var url = 'http://10.0.2.47:8004/get_order';
 
     $.get(url, function(response) {
 
@@ -296,7 +296,7 @@ $(document).ready(function() {
 
             if (row.getData().status_code == 'На исполнении' || row.getData().status_code == 'Завершено') {
 
-                var url = `http://192.168.200.92:8004/get_suborder/${row.getData().id}`;
+                var url = `http://10.0.2.47:8004/get_suborder/${row.getData().id}`;
 
                     $.get(url, function(response) {
 
@@ -413,7 +413,7 @@ function hide_element_suborder() {
 
 async function update_order(){
 
-    let url = new URL('http://192.168.200.92:8004/update_order');
+    let url = new URL('http://10.0.2.47:8004/update_order');
 
     url.searchParams.set('id', document.getElementById('current_order_id').value)
     url.searchParams.set('deadline', document.getElementById('deadline').value)
@@ -463,7 +463,7 @@ function deleteSuborder() {
     var isDelete = confirm("Подвердите удаление поручения.");
 
     if (isDelete == true) {
-        $.post("http://192.168.200.92:8004/delete_suborder/" +
+        $.post("http://10.0.2.47:8004/delete_suborder/" +
         document.getElementById('current_order_id').value +"/"+
         document.getElementById('current_suborder_id').value, function(response){
             })
@@ -502,7 +502,7 @@ function deleteSuborder() {
 
 <script>
 
-    var users = $.get( "http://192.168.200.92:8004/get_users", function(response) {
+    var users = $.get( "http://10.0.2.47:8004/get_users", function(response) {
         $.each(JSON.parse(response), function(key, value) {
 
             $('#approving_employee, #initiator, #employee_order, #employee_sub_order, #employee_up, #initiator_up_order, #approving_employee_up_order, #employee_order_up_order')
