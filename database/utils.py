@@ -79,3 +79,11 @@ def date_formatter(json: dict[str, Any]) -> dict:
     return json
 
 
+def query_from_file(sql_file: str) -> str:
+    """
+    Чтение запроса из файла
+    """
+    with open(sql_file, 'r', encoding='utf-8') as file:
+        return file.read()
+
+

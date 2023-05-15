@@ -10,6 +10,7 @@ import requests
 from database.utils import User, date_formatter
 import logging
 from logger.logger import *
+from database.ibso import get_users_and_emails
 
 
 logger = logging.getLogger(__name__)
@@ -432,29 +433,6 @@ class UsersTable(BaseDB):
     def __init__(self):
         super().__init__()
 
-    @staticmethod
-    def get_phone_book() -> dict:
-        """
-        Тянет данные с портала
-        """
-        # phonebook = {}
-        phonebook = []
-        r = requests.get('http://portal/phonebook')
-        soup = bs(r.text, "html.parser")
-        main_table = soup.find_all('tr', class_='usTblContent')
-        for table in main_table:
-            table = tuple(map(lambda x: x.text.replace('\n', ''), table))
-            if table[9]:
-                phonebook.append({
-                    "user_name": table[3],
-                    # 'position': table[5],
-                    'email': table[9],
-                    # 'phone': table[11] or '-',
-                })
-            else:
-                continue
-        return phonebook
-
     def add_user(self, user: bytes) -> None:
         user = json.loads(user)
         _columns = user.keys()
@@ -498,9 +476,9 @@ class UsersTable(BaseDB):
         self.conn.close()
         return json.dumps(result)
 
-    def update_users_table(self) -> None:
+    async def update_users_table(self) -> None:
         try:
-            phonebook = UsersTable.get_phone_book()
+            phonebook = await get_users_and_emails()
             for row in phonebook:
                 _columns = row.keys()
                 q = Query.into(self.table).columns(*_columns).insert(*row.values())

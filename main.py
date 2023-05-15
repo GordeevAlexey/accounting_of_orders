@@ -195,7 +195,7 @@ async def startup():
     """
     remind_to_employ(scheduler)
     send_weekly_report(scheduler)
-    table_update(scheduler)
+    await table_update(scheduler)
 
 @app.get("/logs")
 async def show_get_logs():
@@ -211,4 +211,5 @@ if __name__ == "__main__":
             reload=True,
             log_level="error"
     )
+    
         

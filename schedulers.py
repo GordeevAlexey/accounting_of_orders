@@ -46,7 +46,7 @@ def send_weekly_report(scheduler: AsyncIOScheduler):
         logger.error(f"Ошибка отчета: {e}")
 
 
-def table_update(scheduler: AsyncIOScheduler):
+async def table_update(scheduler: AsyncIOScheduler):
     """
     Планировщик обнавления таблиц пользователей
     """
