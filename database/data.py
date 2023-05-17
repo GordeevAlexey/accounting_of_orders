@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from enum import Enum
+from datetime import date
 
 #Заделы на будущее)
 
@@ -43,3 +44,8 @@ class Order(AbstractOrder):
 class Suborder(AbstractOrder):
     id_orders: str
     content: str
+
+
+class Period(BaseModel):
+    start_period: str
+    end_period: str

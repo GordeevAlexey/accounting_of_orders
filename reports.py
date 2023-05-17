@@ -1,5 +1,6 @@
 from io import BytesIO
 from database.pg_db import BaseDB
+from database.data import Period
 from datetime import datetime, timedelta
 # from pypika import Query, Table
 from database.utils import *
@@ -322,3 +323,15 @@ class WeeklyReport:
                 self.form_executed_for_the_period()
             )
             logger.info(f'Отчет отправлен за период -> {srp}-{erp}.')
+
+
+def manual_report_unloading(period: Period) -> bytes:
+    """
+    Ручная выгрузка отчета
+    """
+    with BytesIO() as output:
+        wb = ExecutedOfThePeriod(**period.dict(), wb=Workbook()).form()
+        del wb['Sheet']
+        wb.save(output)
+        res = output.getvalue()
+    return res 

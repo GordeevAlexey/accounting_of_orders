@@ -3,6 +3,7 @@ from database.pg_db import OrdersTable, SubOrdersTable, UsersTable, Reports
 import uvicorn
 from fastapi import FastAPI, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, FileResponse
 from starlette.templating import Jinja2Templates
@@ -201,6 +202,20 @@ async def startup():
 async def show_get_logs():
     logger.info('Выгрузка логов.')
     return FileResponse(path='logs.log', filename='logs.log', media_type='text/mp4')
+
+
+@app.get("/report_by_period")
+async def report_by_period(period = Depends(Period)):
+    try:
+        data = manual_report_unloading(period)
+        headers = {
+                'content-disposition':
+                f'attachment; filename="manual_report({period.start_period}-{period.end_period}).xlsx"'
+        }
+        logger.info(f'Ручная выгрузка отчета за период {period.start_period}-{period.end_period}')
+        return Response(content=data, headers=headers)
+    except Exception as e:
+        logger.error(f'Ошибка при ручной выгрузке отчета -> {e}')
 
 
 if __name__ == "__main__":
