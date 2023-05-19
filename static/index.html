@@ -128,6 +128,20 @@
     <input type="button" class="input_css" value="Добавить документ" onclick="showModalWin('add_order')">
     <input id="update_order_btn" class="input_css" type="button" value="Редактировать приказ" onclick="showModalWin('update_order')" hidden>
 </div>
+    <div align="right">
+        <input type="date" id="date_start">
+        <br>
+        <br>
+        <input type="date" id="date_end">
+        <br>
+        <br>
+        <input type="button" value="Сформировать отчет" onclick="get_report();">
+        <br>
+        <br>
+    </div>
+
+
+
 
 <div id="orders"></div>
 <div id="suborders_manual" hidden>
@@ -436,7 +450,7 @@ async function update_order(){
     });
 
     if (response.ok) {
-        location.reload();
+<!--        location.reload();-->
     } else {
         alert("Ошибка HTTP: " + response.status);
     }
@@ -516,6 +530,15 @@ function deleteSuborder() {
 
 </script>
 
+<script>
+    async function get_report(){
+        url = new URL("http://192.168.200.168:8004/report_by_period")
+        url.searchParams.append('start_period', document.getElementById('date_start').value);
+        url.searchParams.append('end_period', document.getElementById('date_end').value);
+        window.location.href = url;
+    }
+
+</script>
 </body>
 
 
