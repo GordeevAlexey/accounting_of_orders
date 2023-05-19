@@ -532,7 +532,7 @@ function deleteSuborder() {
 
 <script>
     async function get_report(){
-        url = new URL("http://192.168.200.168:8004/report_by_period")
+        url = new URL("http://10.0.2.47:8004/report_by_period")
         url.searchParams.append('start_period', document.getElementById('date_start').value);
         url.searchParams.append('end_period', document.getElementById('date_end').value);
         window.location.href = url;
