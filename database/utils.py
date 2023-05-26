@@ -51,7 +51,7 @@ class BodyMessage(str, Enum):
 
 
 class User(NamedTuple):
-    name: str
+    user_name: str
     email: str
 
 

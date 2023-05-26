@@ -430,7 +430,7 @@ class UsersTable:
         Возвращает список именованный кортежей с именем пользователя и его почтой
         """
         users_emails = await get_users_and_emails()
-        return [User(*d) for d in users_emails if d['user_name'] in users]
+        return [User(**d) for d in users_emails if d['user_name'] in users]
 
     async def get_users(self) -> JsonList:
         users_emails = await get_users_and_emails()

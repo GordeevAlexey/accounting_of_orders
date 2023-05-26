@@ -102,7 +102,7 @@ async def add_suborder(current_order_id: str,
         }
 
     suborder_id = SubOrdersTable().add_suborder(data)
-    users = UsersTable().select_users(employee_sub_order)
+    users = await UsersTable().select_users(employee_sub_order)
     Email.send_info(suborder_id, users, Action.ADD)
 
     return RedirectResponse("/", status_code=303)
@@ -124,7 +124,7 @@ async def update_suborder(current_order_id: str,
     }
 
     SubOrdersTable().update_suborder(data)
-    users = UsersTable().select_users(employee_up)
+    users = await UsersTable().select_users(employee_up)
     Email.send_info(current_suborder_id, users, Action.UPDATE)
 
     return RedirectResponse("/", status_code=303)
