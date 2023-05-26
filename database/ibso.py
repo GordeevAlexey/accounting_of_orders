@@ -2,12 +2,12 @@ import cx_Oracle_async
 from database.utils import query_from_file
 import os
 
+
 IBS_HOST=os.getenv("IBS_HOST")
 IBS_PORT=os.getenv("IBS_PORT")
 IBS_SERVICE_NAME=os.getenv("IBS_SERVICE_NAME")
 IBS_USER=os.getenv("IBS_USER")
 IBS_PWD=os.getenv("IBS_PWD")
-
 
 
 async def _oracle_pool():
@@ -33,6 +33,4 @@ async def get_users_and_emails():
            await cursor.execute(query)
            data = await cursor.fetchall()
     await pool.close()
-    res = [{"email": email, "user_name": name} for email, name in data]
-    print(res)
-    return res
+    return [{"email": email, "user_name": name} for email, name in data]

@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup as bs
 import psycopg2
 import os
 from dotenv import load_dotenv
@@ -6,7 +5,6 @@ from pypika import Query, Table, Case, functions as fn
 from datetime import datetime, timedelta
 import json
 from typing import Dict, Any, Optional
-import requests
 from database.utils import User, date_formatter
 import logging
 from logger.logger import *
@@ -237,8 +235,7 @@ class SubOrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 try:
                     cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'suborders' ORDER BY ordinal_position;")
-                    headers = [row[0] for row in cursor.fetchall()]
-                    return headers
+                    return [row[0] for row in cursor.fetchall()]
                 except:
                     return None
 
@@ -366,11 +363,11 @@ class SubOrdersTable(BaseDB):
         SubOrdersTable()._check_open_close_suborder(order_id)
         logger.info(f'Строка с id {suborder_id} "удалена" из suborders.')
 
-    def get_delay_suborders(self, days: int = 0) -> dict[str, str] | None:
+    async def get_delay_suborders(self, days: int = 0) -> dict[str, str] | None:
         """
         Возвращает выборку по просроченным поручениям.
         """
-        delay_date = datetime.today() + timedelta(days=days)
+        delay_date = datetime.now() + timedelta(days=days)
         cols = (
             'id',
             'employee',
@@ -389,7 +386,7 @@ class SubOrdersTable(BaseDB):
             suborders = [dict(zip(cols, row)) for row in suborders]
             suborders = list(map(date_formatter, suborders))
             for order in suborders:
-                users = UsersTable().select_users(order['employee'].split(", "))
+                users = await UsersTable().select_users(order['employee'].split(", "))
                 order.update({'employee': users})
         else:
             suborders = None
@@ -426,72 +423,19 @@ class HistoryTable(BaseDB):
         self.conn.close()
 
 
-class UsersTable(BaseDB):
+class UsersTable:
 
-    table = Table('users')
-
-    def __init__(self):
-        super().__init__()
-
-    def add_user(self, user: bytes) -> None:
-        user = json.loads(user)
-        _columns = user.keys()
-        q = Query.into(self.table).columns(*_columns).insert(*user.values())
-        with self.conn:
-            with self.conn.cursor() as cursor:
-                try:
-                    cursor.execute(str(q))
-                except psycopg2.errors.UniqueViolation as e:
-                    logger.warning(f'Пользватель {user["user_name"]} уже имеется в базе.')
-        self.conn.close()
-
-    def select_users(self, users: list[str]) -> list[User]:
+    async def select_users(self, users: list[str]) -> list[User]:
         """
         Возвращает список именованный кортежей с именем пользователя и его почтой
         """
-        q = Query.from_(self.table).select(self.table.star)\
-            .where(self.table.user_name.isin(users))
-        with self.conn:
-            with self.conn.cursor() as cursor:
-                cursor.execute(str(q))
-                users = [User(*user_data) for user_data in cursor.fetchall()]
-        self.conn.close()
-        return users
+        users_emails = await get_users_and_emails()
+        return [User(*d) for d in users_emails if d['user_name'] in users]
 
-    def get_users(self) -> JsonList:
-        q = Query.from_(self.table).select(self.table.user_name)
-        with self.conn:
-            with self.conn.cursor() as cursor:
-                cursor.execute(str(q))
-                result = [user_name[0] for user_name in cursor.fetchall()]
-        self.conn.close()
+    async def get_users(self) -> JsonList:
+        users_emails = await get_users_and_emails()
+        result = [d['user_name'] for d in users_emails]
         return json.dumps(result)
-
-    def get_user_mails(self) -> JsonDict:
-        q = Query.from_(self.table).select(self.table.star)
-        with self.conn:
-            with self.conn.cursor() as cursor:
-                cursor.execute(str(q))
-                result = [{user_name: email} for user_name, email in cursor.fetchall()]
-        self.conn.close()
-        return json.dumps(result)
-
-    async def update_users_table(self) -> None:
-        try:
-            phonebook = await get_users_and_emails()
-            for row in phonebook:
-                _columns = row.keys()
-                q = Query.into(self.table).columns(*_columns).insert(*row.values())
-                with self.conn:
-                    with self.conn.cursor() as cursor:
-                        try:
-                            cursor.execute(str(q))
-                        except psycopg2.errors.UniqueViolation as e:
-                            logger.warning(f'Пользватель {row["user_name"]} уже имеется в базе.')
-            self.conn.close()
-            logger.info("Таблица пользователей обновлена.")
-        except requests.exceptions.ConnectionError as e:
-            logger.error(f"Не удалось обновить таблицу пользователей.\nОшибка -> {e}")
 
 
 class Reports(BaseDB):
@@ -502,8 +446,10 @@ class Reports(BaseDB):
         super().__init__()
 
     def get_info_suborder(self, id_suborder: str) -> JsonDict:
-        headers = ("id_order", "issue_type", "issue_idx", "approving_date", "title", "initiator", "approving_employee",
-                   "employee_order", "deadline", "comment", "reference", "id_suborder", "employee_sub_order", "deadline_suborder",
+        headers = ("id_order", "issue_type", "issue_idx", "approving_date", "title",
+                   "initiator", "approving_employee",
+                   "employee_order", "deadline", "comment", "reference",
+                   "id_suborder", "employee_sub_order", "deadline_suborder",
                    "status_code", "content", "comment_suborder")
         q = Query\
             .from_(self.table_sub_orders)\
@@ -535,6 +481,5 @@ class Reports(BaseDB):
 
         result = [dict(zip(headers, row)) for row in orders]
         self.conn.close()
-        res = json.dumps(result, default=str)
-        return res 
+        return json.dumps(result, default=str)
 

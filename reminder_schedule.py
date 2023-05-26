@@ -19,15 +19,15 @@ class Reminder:
     """
 
     @staticmethod
-    def remind_to_employee() -> None:
-        Reminder._form_and_send(days=3)
-        Reminder._form_and_send()
+    async def remind_to_employee() -> None:
+        await Reminder._form_and_send(days=3)
+        await Reminder._form_and_send()
     
     @staticmethod
-    def _form_and_send(days: int=0) -> None:
+    async def _form_and_send(days: int=0) -> None:
         message = BodyMessage.WARNING_DELAY if days else BodyMessage.CRITICAL_DELAY
 
-        if delay_orders := SubOrdersTable().get_delay_suborders(days):
+        if delay_orders := await SubOrdersTable().get_delay_suborders(days):
             logger.info(f"Сработало напоминание по незакрытым поручениям: {delay_orders}")
             [
                 Email._send(email, message.format(HOST=HOST,suborder_id=order['id']))

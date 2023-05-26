@@ -187,16 +187,15 @@ async def start(request: Request):
 
 @app.get("/get_users")
 async def get_users():
-    return UsersTable().get_users()
+    return await UsersTable().get_users()
 
 @app.on_event("startup")
 async def startup():
     """
     Запуск планировщиков
     """
-    remind_to_employ(scheduler)
+    await remind_to_employ(scheduler)
     send_weekly_report(scheduler)
-    await table_update(scheduler)
 
 @app.get("/logs")
 async def show_get_logs():
