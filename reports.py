@@ -280,7 +280,7 @@ class ApprovedForThePeriod:
 
 class WeeklyReport:
     def __init__(self) -> None:
-        self.report_date = datetime.today()
+        self.report_date = datetime.now()
         self.time_to_report = False
         self.wb = None
 
