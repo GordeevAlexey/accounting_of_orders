@@ -2,14 +2,12 @@ from io import BytesIO
 from database.pg_db import BaseDB
 from database.data import Period
 from datetime import datetime, timedelta
-# from pypika import Query, Table
 from database.utils import *
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
 from openpyxl.utils import get_column_letter
 from send_email import Email
-from typing import Any, Callable
-# import psycopg2
+from typing import Any, Callable, Optional
 import logging
 from logger.logger import *
 
@@ -280,17 +278,19 @@ class ApprovedForThePeriod:
 
 class WeeklyReport:
     def __init__(self) -> None:
-        self.report_date = datetime.now()
-        self.time_to_report = False
         self.wb = None
 
+    def report_time(self) -> Optional[bool]:
+        self.report_date = datetime.now()
         if self.report_date.weekday() == 4:
+            logger.info(f'Проверка текущего времени для отчета -> {self.report_date}')
             self.time_to_report = True
             self.start_report_period = self.report_date - timedelta(days=11)
             self.end_report_period = self.start_report_period + timedelta(days=6)
             self.start_report_period = self.start_report_period.strftime("%Y-%m-%d")
             self.end_report_period = self.end_report_period.strftime("%Y-%m-%d")
             self.output = BytesIO()
+            return True
 
     def form_approved_for_the_period(self) -> None:
         approved_period = ApprovedForThePeriod(
@@ -312,7 +312,7 @@ class WeeklyReport:
         return res
 
     def send_report(self) -> None:
-        if self.time_to_report is True:
+        if self.report_time() is True:
             self.form_approved_for_the_period()
             srp = '.'.join(self.start_report_period.split("-")[::-1])
             erp = '.'.join(self.end_report_period.split("-")[::-1])
