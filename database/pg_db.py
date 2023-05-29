@@ -435,7 +435,7 @@ class UsersTable:
     async def get_users(self) -> JsonList:
         users_emails = await get_users_and_emails()
         result = [d['user_name'] for d in users_emails]
-        return json.dumps(result)
+        return json.dumps(sorted(result))
 
 
 class Reports(BaseDB):

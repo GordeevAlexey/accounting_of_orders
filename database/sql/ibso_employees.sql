@@ -1,5 +1,5 @@
 SELECT 
-    A1_1.C_EMAIL email,
+    distinct A1_1.C_EMAIL email,
     A1_1.C_NAME user_name
 FROM
     Z#ACC_PHONEBOOK A1_1,
