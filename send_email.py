@@ -3,8 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 import smtplib
-from database.utils import User, Action
-from database.utils import BodyMessage
+from database.utils import User, Action, BodyMessage, order_type_incline
 
 
 HOST = "http://10.0.2.47:8004"
@@ -24,16 +23,23 @@ class Email:
         server.quit()
 
     @staticmethod
-    def send_info(id: str, users: list[User], action: Action):
+    def send_info(id: str, order_info: tuple[str], users: list[User], action: Action):
         match action:
             case Action.ADD:
-                message = BodyMessage.ADD.format(HOST=HOST, suborder_id=id)
+                message = BodyMessage.ADD
             case Action.UPDATE:
-                message = BodyMessage.UPDATE.format(HOST=HOST, suborder_id=id)
+                message = BodyMessage.UPDATE
             case Action.DELETE:
-                message = BodyMessage.DELETE.format(HOST=HOST, suborder_id=id)
+                message = BodyMessage.DELETE
             case Action.CLOSE:
-                message = BodyMessage.CLOSE.format(HOST=HOST, suborder_id=id)
+                message = BodyMessage.CLOSE
+        order_type, issue_idx = order_info
+        message = message.format(
+            HOST=HOST,
+            suborder_id=id,
+            order=order_type_incline(order_type),
+            issue_idx=issue_idx
+        )
         [Email._send(email, message) for _, email in users]
     
     @staticmethod

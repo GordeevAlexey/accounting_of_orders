@@ -103,8 +103,8 @@ async def add_suborder(current_order_id: str,
 
     suborder_id = SubOrdersTable().add_suborder(data)
     users = await UsersTable().select_users(employee_sub_order)
-    Email.send_info(suborder_id, users, Action.ADD)
-
+    info_order = OrdersTable().get_order(current_order_id)
+    Email.send_info(suborder_id, info_order, users, Action.ADD)
     return RedirectResponse("/", status_code=303)
 
 
@@ -125,8 +125,8 @@ async def update_suborder(current_order_id: str,
 
     SubOrdersTable().update_suborder(data)
     users = await UsersTable().select_users(employee_up)
-    Email.send_info(current_suborder_id, users, Action.UPDATE)
-
+    info_order = OrdersTable().get_order(current_order_id)
+    Email.send_info(current_suborder_id, info_order, users, Action.UPDATE)
     return RedirectResponse("/", status_code=303)
 
 
@@ -215,6 +215,11 @@ async def report_by_period(period = Depends(Period)):
         return Response(content=data, headers=headers)
     except Exception as e:
         logger.error(f'Ошибка при ручной выгрузке отчета -> {e}')
+
+@app.get("/test")
+async def test():
+    OrdersTable().get_order('00170abf-3ae0-41b7-8980-2a7fb7e1c081')
+
 
 
 if __name__ == "__main__":

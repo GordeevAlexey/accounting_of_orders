@@ -9,6 +9,7 @@ from database.utils import User, date_formatter
 import logging
 from logger.logger import *
 from database.ibso import get_users_and_emails
+from database.data import *
 
 
 logger = logging.getLogger(__name__)
@@ -221,6 +222,20 @@ class OrdersTable(BaseDB):
                 cursor.execute(str(q))
         self.conn.close()
         logger.info(f'Успешно обновленны данные id:{data["id"]}')
+
+    def get_order(self, order_id: str) -> tuple[str]:
+        headers = (
+            'issue_type',
+            'issue_idx',
+        )
+        q = Query.from_(self.table).select(*headers)\
+            .where(self.table.id == order_id)
+        with self.conn:
+            with self.conn.cursor() as cursor:
+                cursor.execute(str(q))
+                res = cursor.fetchone()
+        self.conn.close()
+        return res
 
 
 class SubOrdersTable(BaseDB):

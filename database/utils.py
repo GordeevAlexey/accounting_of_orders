@@ -8,14 +8,14 @@ class BodyMessage(str, Enum):
     ADD ="""
         <pre>
         Добрый день.<br>
-        Вам назначено новое поручение.<br>
+        Вам назначено новое поручение по {order} №{issue_idx}.<br>
         Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>"""
     UPDATE = """
         <pre>
         Добрый день.<br>
-        Поручение обновлено.<br>
+        Поручение обновлено по {order} №{issue_idx}.<br>
         Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>
@@ -23,7 +23,7 @@ class BodyMessage(str, Enum):
     DELETE = """
         <pre>
         Добрый день.<br>
-        Поручение удалено.<br>
+        Поручение удалено по {order} №{issue_idx}.<br>
         Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>
@@ -31,20 +31,20 @@ class BodyMessage(str, Enum):
     CLOSE = """
         </pre>
         Добрый день.<br>
-        Поручение закрыто.<br>
+        Поручение закрыто по {order} №{issue_idx}.<br>
 
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>
         """
     WARNING_DELAY = """
         </pre>
-        До окончания срока исполнения задачи осталось 3 дня!<br>
+        До окончания срока исполнения задач по {order} №{issue_idx} и осталось 3 дня!<br>
         Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>"""
     CRITICAL_DELAY = """
         </pre>
-        Срок исполнения задачи истек!<br>
+        Срок исполнения задачи по {order} №{issue_idx} истек!<br>
         Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>"""
@@ -61,6 +61,13 @@ class Action(str, Enum):
     DELETE = "delete"
     CLOSE = "close"
     DELAY = "delay"
+
+
+def order_type_incline(order_type: str) -> str:
+    """
+    Склонение приказа или распоряжения
+    """
+    return "Приказу" if ord == "Приказ" else "Распоряжению"
 
 
 def employees_to_string(order: dict):
