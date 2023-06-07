@@ -67,7 +67,7 @@ def order_type_incline(order_type: str) -> str:
     """
     Склонение приказа или распоряжения
     """
-    return "Приказу" if ord == "Приказ" else "Распоряжению"
+    return "Приказу" if order_type == "Приказ" else "Распоряжению"
 
 
 def employees_to_string(order: dict):

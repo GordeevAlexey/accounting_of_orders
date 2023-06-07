@@ -92,19 +92,18 @@ async def add_suborder(current_order_id: str,
                        employee_sub_order: list = Form(),
                        deadline: str = Form(),
                        content: str = Form()):
-
-    data = {
-        "id_orders": current_order_id,
-        "employee": ', '.join(employee_sub_order),
-        "deadline": deadline,
-        "content": content,
-        "status_code": 'На исполнении'
-        }
-
-    suborder_id = SubOrdersTable().add_suborder(data)
-    users = await UsersTable().select_users(employee_sub_order)
-    info_order = OrdersTable().get_order(current_order_id)
-    Email.send_info(suborder_id, info_order, users, Action.ADD)
+    for employee in employee_sub_order:
+        data = {
+            "id_orders": current_order_id,
+            "employee": employee,
+            "deadline": deadline,
+            "content": content,
+            "status_code": 'На исполнении'
+            }
+        suborder_id = SubOrdersTable().add_suborder(data)
+        users = await UsersTable().select_users([employee])
+        info_order = OrdersTable().get_order(current_order_id)
+        Email.send_info(suborder_id, info_order, users, Action.ADD)
     return RedirectResponse("/", status_code=303)
 
 
@@ -194,8 +193,8 @@ async def startup():
     """
     Запуск планировщиков
     """
-    await remind_to_employ(scheduler)
-    send_weekly_report(scheduler)
+    # await remind_to_employ(scheduler)
+    # send_weekly_report(scheduler)
 
 @app.get("/logs")
 async def show_get_logs():
@@ -228,7 +227,7 @@ if __name__ == "__main__":
             host="0.0.0.0",
             port=8004,
             reload=True,
-            log_level="error"
+            log_level="warning"
     )
     
         
