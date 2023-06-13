@@ -92,6 +92,7 @@ async def add_suborder(current_order_id: str,
                        employee_sub_order: list = Form(),
                        deadline: str = Form(),
                        content: str = Form()):
+    #Колстыли
     for employee in employee_sub_order:
         data = {
             "id_orders": current_order_id,
@@ -193,8 +194,8 @@ async def startup():
     """
     Запуск планировщиков
     """
-    # await remind_to_employ(scheduler)
-    # send_weekly_report(scheduler)
+    await remind_to_employ(scheduler)
+    send_weekly_report(scheduler)
 
 @app.get("/logs")
 async def show_get_logs():

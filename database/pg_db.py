@@ -385,6 +385,7 @@ class SubOrdersTable(BaseDB):
         delay_date = datetime.now() + timedelta(days=days)
         cols = (
             'id',
+            'id_orders',
             'employee',
         )
         q = Query.from_(self.table).select(*cols)\

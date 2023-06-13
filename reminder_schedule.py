@@ -1,6 +1,6 @@
-from database.pg_db import SubOrdersTable
+from database.pg_db import SubOrdersTable, OrdersTable
 from send_email import Email
-from database.utils import BodyMessage
+from database.utils import BodyMessage, order_type_incline
 import logging
 from logger.logger import *
 
@@ -17,6 +17,8 @@ class Reminder:
     до окончания срока поручения, в день поручения и каждый день после нарушения
     сроков.
     """
+    def __init__(self) -> None:
+        pass
 
     @staticmethod
     async def remind_to_employee() -> None:
@@ -29,7 +31,16 @@ class Reminder:
 
         if delay_orders := await SubOrdersTable().get_delay_suborders(days):
             logger.info(f"Сработало напоминание по незакрытым поручениям: {delay_orders}")
-            [
-                Email._send(email, message.format(HOST=HOST,suborder_id=order['id']))
-                for order in delay_orders for _, email in order['employee'] 
-            ]
+            for order in delay_orders:
+                print(order['id'])
+                order_type, issue_idx = OrdersTable().get_order(order['id_orders'])
+                for _, email in order['employee']:
+                    Email._send(
+                        email,
+                        message.format(
+                            HOST=HOST,
+                            suborder_id=order['id'],
+                            order=order_type_incline(order_type),
+                            issue_idx=issue_idx
+                        )
+                    )
