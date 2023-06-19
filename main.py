@@ -1,7 +1,7 @@
 from database.pg_db import OrdersTable, SubOrdersTable, UsersTable, Reports
 
 import uvicorn
-from fastapi import FastAPI, Form, Depends
+from fastapi import FastAPI, Form, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from starlette.requests import Request
@@ -182,12 +182,17 @@ async def get_info_for_close_suborder(suborder_id: str):
 
 @app.get("/")
 async def start(request: Request):
+    client_host = request.client.host
+    if client_host not in ('192.168.200.92', '192.168.200.168', '192.168.200.38', '192.168.201.48'):
+        logger.warning(f'Посторонний ip -> {client_host}')
+        raise HTTPException(status_code=403, detail='Access is denied')
     return templates.TemplateResponse('index.html', {'request': request})
 
 
 @app.get("/get_users")
 async def get_users():
     return await UsersTable().get_users()
+
 
 @app.on_event("startup")
 async def startup():
@@ -196,6 +201,7 @@ async def startup():
     """
     await remind_to_employ(scheduler)
     send_weekly_report(scheduler)
+
 
 @app.get("/logs")
 async def show_get_logs():
@@ -215,10 +221,6 @@ async def report_by_period(period = Depends(Period)):
         return Response(content=data, headers=headers)
     except Exception as e:
         logger.error(f'Ошибка при ручной выгрузке отчета -> {e}')
-
-@app.get("/test")
-async def test():
-    OrdersTable().get_order('00170abf-3ae0-41b7-8980-2a7fb7e1c081')
 
 
 
