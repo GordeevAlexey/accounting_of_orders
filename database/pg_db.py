@@ -391,7 +391,7 @@ class SubOrdersTable(BaseDB):
         q = Query.from_(self.table).select(*cols)\
             .where(
                 (self.table.deleted == False) & (self.table.status_code != 'Завершено')
-                & (self.table.deadline == delay_date.strftime('%Y-%m-%d'))
+                & (self.table.deadline <= delay_date.strftime('%Y-%m-%d'))
             )
         with self.conn:
             with self.conn.cursor() as cursor:

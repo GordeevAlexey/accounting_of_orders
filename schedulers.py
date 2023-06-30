@@ -10,7 +10,7 @@ from logger.logger import *
 logger = logging.getLogger(__name__)
 
 
-async def remind_to_employ(scheduler: AsyncIOScheduler):
+async def remind_to_employ(scheduler: AsyncIOScheduler) -> None:
     """
     Планировщик напоминаний об исполнении поручений 
     """
@@ -29,7 +29,7 @@ async def remind_to_employ(scheduler: AsyncIOScheduler):
     except Exception as e:
         logger.error(f"Ошибка планировщика: {e}")
 
-def send_weekly_report(scheduler: AsyncIOScheduler):
+def send_weekly_report(scheduler: AsyncIOScheduler) -> None:
     """
     Планировщик рассылки отчетов
     """
