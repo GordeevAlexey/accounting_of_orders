@@ -17,6 +17,7 @@ import logging
 from logger.logger import *
 from database.data import *
 from schedulers import *
+from common import TRUSTED_USERS
 
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 templates = Jinja2Templates(directory="static", autoescape=False, auto_reload=True)
+
 
 
 @app.post("/update_order")
@@ -183,7 +186,7 @@ async def get_info_for_close_suborder(suborder_id: str):
 @app.get("/")
 async def start(request: Request):
     client_host = request.client.host
-    if client_host not in ('192.168.200.92', '192.168.200.168', '192.168.200.38', '192.168.201.48'):
+    if client_host not in TRUSTED_USERS:
         logger.warning(f'Посторонний ip -> {client_host}')
         raise HTTPException(status_code=403, detail='Access is denied')
     return templates.TemplateResponse('index.html', {'request': request})
@@ -221,7 +224,6 @@ async def report_by_period(period = Depends(Period)):
         return Response(content=data, headers=headers)
     except Exception as e:
         logger.error(f'Ошибка при ручной выгрузке отчета -> {e}')
-
 
 
 if __name__ == "__main__":
