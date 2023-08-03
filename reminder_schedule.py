@@ -32,7 +32,6 @@ class Reminder:
         if delay_orders := await SubOrdersTable().get_delay_suborders(days):
             logger.info(f"Сработало напоминание по незакрытым поручениям: {delay_orders}")
             for order in delay_orders:
-                print(order['id'])
                 order_type, issue_idx = OrdersTable().get_order(order['id_orders'])
                 for _, email in order['employee']:
                     Email._send(
