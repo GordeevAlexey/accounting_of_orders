@@ -1,18 +1,18 @@
-version: "3.9"
+version: "3.3"
 services:
-  db:
-    container_name: database
-    restart: always
-    image: postgres:latest
-    volumes:
-      - ./database/sql/pg_schema.sql:/docker-entrypoint-initdb.d/pg_schema.sql
-    environment:
-      - POSTGRES_PASSWORD=admin
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgres
-      - TZ=Asia/Novosibirsk
-    ports:
-      - 5432:5432
+  # db:
+  #   container_name: database
+  #   restart: always
+  #   image: postgres:latest
+  #   volumes:
+  #     - ./database/sql/pg_schema.sql:/docker-entrypoint-initdb.d/pg_schema.sql
+  #   environment:
+  #     - POSTGRES_PASSWORD=admin
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_DB=postgres
+  #     - TZ=Asia/Novosibirsk
+  #   ports:
+  #     - 5432:5432
   accounting_of_orders:
     container_name: accounting_of_orders
     build: .
@@ -22,7 +22,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DBNAME=postgres
       - POSTGRES_PASSWORD=admin
-      - HOST=192.168.200.92
+      - HOST=10.2.0.47
       - PORT=5432
       - TZ=Asia/Novosibirsk
     ports:
