@@ -1,6 +1,7 @@
 version: "3.3"
 services:
   accounting_of_orders:
+    build: .
     container_name: accounting_of_orders
     environment:
       - POSTGRES_USER=postgres
