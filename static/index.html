@@ -117,8 +117,6 @@
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.1/js/tabulator.min.js"></script>
-<!-- <script type="text/javascript" src="http://192.168.200.92:8004/sandbox/static/tabulator.js"></script> -->
-<script type="text/javascript" src="http://10.0.2.47:8004/sandbox/static/tabulator.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
@@ -313,7 +311,7 @@ $(document).ready(function() {
 
             if (row.getData().status_code == 'На исполнении' || row.getData().status_code == 'Завершено') {
 
-                var url = `${HOST}get_suborder/${row.getData().id}`;
+                var url = `${HOST}/get_suborder/${row.getData().id}`;
 
                     $.get(url, function(response) {
 
