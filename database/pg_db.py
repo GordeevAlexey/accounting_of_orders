@@ -235,7 +235,7 @@ class OrdersTable(BaseDB):
                 cursor.execute(str(q))
                 res = cursor.fetchone()
         self.conn.close()
-        return res
+        return dict(zip(headers, res))
 
 
 class SubOrdersTable(BaseDB):
@@ -378,7 +378,7 @@ class SubOrdersTable(BaseDB):
         SubOrdersTable()._check_open_close_suborder(order_id)
         logger.info(f'Строка с id {suborder_id} "удалена" из suborders.')
 
-    async def get_delay_suborders(self, days: int = 0) -> dict[str, str] | None:
+    async def get_delay_suborders(self, days: int) -> dict[str, str] | None:
         """
         Возвращает выборку по просроченным поручениям.
         """
@@ -387,12 +387,17 @@ class SubOrdersTable(BaseDB):
             'id',
             'id_orders',
             'employee',
+            'deadline'
         )
+        if days == 3:
+            condition = self.table.deadline == delay_date.strftime('%Y-%m-%d')
+        else:
+            condition = self.table.deadline < delay_date.strftime('%Y-%m-%d')
+
         q = Query.from_(self.table).select(*cols)\
             .where(
                 (self.table.deleted == False) & (self.table.status_code != 'Завершено')
-                & (self.table.deadline <= delay_date.strftime('%Y-%m-%d'))
-            )
+                & condition)
         with self.conn:
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))

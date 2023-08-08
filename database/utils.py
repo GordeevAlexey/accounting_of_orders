@@ -2,8 +2,6 @@ from typing import NamedTuple, Any
 from enum import Enum
 
 
-HOST = "http://10.0.2.47:8004"
-
 class BodyMessage(str, Enum):
     ADD ="""
         <pre>
@@ -38,7 +36,7 @@ class BodyMessage(str, Enum):
         """
     WARNING_DELAY = """
         </pre>
-        До окончания срока исполнения задач по {order} №{issue_idx} и осталось 3 дня!<br>
+        До окончания срока исполнения задачи по {order} №{issue_idx} осталось 3 дня!<br>
         Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>"""
@@ -63,7 +61,7 @@ class Action(str, Enum):
     DELAY = "delay"
 
 
-def order_type_incline(order_type: str) -> str:
+def order_type_inline(order_type: str) -> str:
     """
     Склонение приказа или распоряжения
     """

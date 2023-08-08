@@ -84,7 +84,6 @@ async def add_order(issue_idx: str = Form(),
 # @app.post("/add_order")
 # async def add_order(order = Depends(NewOrder)):
 #     o = order.dict()
-#     print(o)
 #     employees_to_string(o)
 #     OrdersTable().add_order(o)
     return RedirectResponse("/", status_code=303)
@@ -107,6 +106,7 @@ async def add_suborder(current_order_id: str,
         suborder_id = SubOrdersTable().add_suborder(data)
         users = await UsersTable().select_users([employee])
         info_order = OrdersTable().get_order(current_order_id)
+        info_order['deadline'] = deadline
         Email.send_info(suborder_id, info_order, users, Action.ADD)
     return RedirectResponse("/", status_code=303)
 
@@ -129,6 +129,7 @@ async def update_suborder(current_order_id: str,
     SubOrdersTable().update_suborder(data)
     users = await UsersTable().select_users(employee_up)
     info_order = OrdersTable().get_order(current_order_id)
+    info_order['deadline'] = deadline_up
     Email.send_info(current_suborder_id, info_order, users, Action.UPDATE)
     return RedirectResponse("/", status_code=303)
 
@@ -207,7 +208,7 @@ async def startup():
 
 
 @app.get("/logs")
-async def show_get_logs():
+async def logs():
     logger.info('Выгрузка логов.')
     return FileResponse(path='logs.log', filename='logs.log', media_type='text/mp4')
 
@@ -224,6 +225,11 @@ async def report_by_period(period = Depends(Period)):
         return Response(content=data, headers=headers)
     except Exception as e:
         logger.error(f'Ошибка при ручной выгрузке отчета -> {e}')
+
+
+@app.get("/test")
+async def test():
+    await Reminder.remind_to_employee()
 
 
 if __name__ == "__main__":

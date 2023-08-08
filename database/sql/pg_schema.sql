@@ -34,15 +34,3 @@ CREATE TABLE IF NOT EXISTS SUBORDERS(
     FOREIGN KEY (id_orders)
        REFERENCES ORDERS (id)
 );
-
-CREATE TABLE IF NOT EXISTS HISTORY(
-    id_orders UUID NOT NULL,
-    id_suborders UUID,
-    data jsonb not null,
-    update_date timestamp NOT NULL default now()
-);
-
-CREATE TABLE IF NOT EXISTS USERS(
-    user_name TEXT unique not null,
-    email TEXT not null
-);
