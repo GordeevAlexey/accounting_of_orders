@@ -19,15 +19,21 @@ class Reminder:
 
     @staticmethod
     async def remind_to_employee() -> None:
-        await Reminder._form_and_send(days=3)
-        await Reminder._form_and_send()
+        await Reminder._form_and_send(3)
+        await Reminder._form_and_send(1)
+        await Reminder._form_and_send(0)
     
     @staticmethod
-    async def _form_and_send(days: int=1) -> None:
-        message = BodyMessage.WARNING_DELAY if days == 3 else BodyMessage.CRITICAL_DELAY
+    async def _form_and_send(days: int) -> None:
+        match days:
+            case 0:
+                message = BodyMessage.TODAY
+            case 1:
+                message = BodyMessage.CRITICAL_DELAY
+            case 3:
+                message = BodyMessage.WARNING_DELAY
 
         if delay_orders := await SubOrdersTable().get_delay_suborders(days):
-            logger.info(f"Сработало напоминание по незакрытым поручениям: {delay_orders}")
             for order in delay_orders:
                 order_info = OrdersTable().get_order(order['id_orders'])
                 _deadline = '.'.join(order['deadline'].split('-')[::-1])
@@ -41,4 +47,11 @@ class Reminder:
                             issue_idx=order_info['issue_idx']
                         ),
                         f"Рассылка от системы поручений. {order_info['issue_type']} №{order_info['issue_idx']}. Дедлайн: {_deadline}"
+                    )
+                    logger.info(
+                        f"Напоминание по незакрытому поручению: "\
+                        f"id: {order['id']}, "\
+                        f"{email}, "\
+                        f"№{order_info['issue_idx']}, "\
+                        f"deadline: {_deadline}"
                     )

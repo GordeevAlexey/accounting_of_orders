@@ -46,6 +46,12 @@ class BodyMessage(str, Enum):
         Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
         *Данное письмо сформировано автоматически, не нужно на него отвечать.
         </pre>"""
+    TODAY = """
+        </pre>
+        Срок исполнения задачи по {order} №{issue_idx} истекает сегодня.<br>
+        Перейдите по <a href="{HOST}/close_suborder/{suborder_id}">ссылке</a> для ознакомления.<br><br>
+        *Данное письмо сформировано автоматически, не нужно на него отвечать.
+        </pre>"""
 
 
 class User(NamedTuple):

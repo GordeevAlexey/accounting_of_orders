@@ -182,7 +182,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
         self.conn.close()
-        logger.info("Поручение добавлено")
+        logger.info(f"{row['issue_type']} №{row['issue_idx']} {'добавлено' if row['issue_type'] == 'Распоряжение' else 'добавлен'}")
 
     def delete_order_row(self, id: bytes) -> None:
         """
@@ -221,7 +221,7 @@ class OrdersTable(BaseDB):
             with self.conn.cursor() as cursor:
                 cursor.execute(str(q))
         self.conn.close()
-        logger.info(f'Успешно обновленны данные id:{data["id"]}')
+        logger.info(f'Обновлены данные {data["id"]}')
 
     def get_order(self, order_id: str) -> tuple[str]:
         headers = (
@@ -349,7 +349,7 @@ class SubOrdersTable(BaseDB):
         SubOrdersTable()._check_open_close_suborder(data['id_orders'])
         self.conn.close()
         HistoryTable().add(self.check_for_update(data))
-        logger.info(f'Успешно обновленны данные id:{_id}')
+        logger.info(f'Обновленны данные поручения id:{_id}')
 
     def add_suborder(self, row: dict) -> str:
         """
@@ -361,7 +361,7 @@ class SubOrdersTable(BaseDB):
         q = Query.into(self.table).columns(*_columns).insert(*row.values())
         with self.conn:
             with self.conn.cursor() as cursor:
-                cursor.execute(str(q) + "RETURNING id")
+                cursor.execute(f'{str(q)} RETURNING id')
                 [suborder_id] = cursor.fetchone()
         self.conn.close()
         SubOrdersTable()._check_open_close_suborder(row['id_orders'])
@@ -389,7 +389,7 @@ class SubOrdersTable(BaseDB):
             'employee',
             'deadline'
         )
-        if days == 3:
+        if days in {0, 3}:
             condition = self.table.deadline == delay_date.strftime('%Y-%m-%d')
         else:
             condition = self.table.deadline < delay_date.strftime('%Y-%m-%d')
