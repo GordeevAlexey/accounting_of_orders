@@ -232,6 +232,11 @@ async def test():
     await Reminder.remind_to_employee()
 
 
+@app.get("/weekly_report", status_code=200)
+async def send_weekly():
+    WeeklyReport().send_report()
+
+
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
@@ -240,5 +245,4 @@ if __name__ == "__main__":
             reload=True,
             log_level="warning"
     )
-    
         
