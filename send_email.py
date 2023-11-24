@@ -52,7 +52,7 @@ class Email:
         msg = MIMEMultipart()
         msg['From'] = "exhorter@akcept.ru"
         msg['Subject'] = "Еженедельный отчет об исполнении ВРД"
-        to = 'azarova@akcept.ru,husnetinova_aa@akcept.ru'
+        to = 'azarova@akcept.ru,husnetinova_aa@akcept.ru,kuznetsova_aa@akcept.ru'
         bcc = 'sidorovich_ns@akcept.ru,gordeev_an@akcept.ru'
         msg['To'] = to
         mailing_list = to.split(',') + bcc.split(',')
