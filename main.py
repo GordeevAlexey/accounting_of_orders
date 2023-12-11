@@ -27,7 +27,6 @@ app = FastAPI()
 scheduler = AsyncIOScheduler()
 scheduler.start()
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -37,7 +36,6 @@ app.add_middleware(
 )
 
 templates = Jinja2Templates(directory="static", autoescape=False, auto_reload=True)
-
 
 
 @app.post("/update_order")
