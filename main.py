@@ -210,7 +210,7 @@ async def logs():
 
 
 @app.get("/report_by_period")
-async def report_by_period(period = Depends(Period)):
+async def report_by_period(period=Depends(Period)):
     try:
         data = manual_report_unloading(period)
         headers = {
@@ -236,7 +236,7 @@ async def send_weekly():
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
-            host="0.0.0.0",
+            host="192.168.200.168",
             port=8004,
             reload=True,
             log_level="warning"
