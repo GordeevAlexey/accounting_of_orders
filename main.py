@@ -21,7 +21,7 @@ from fastapi.staticfiles import StaticFiles
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = FastAPI(docs_url=None, redoc_url=None)
 
 scheduler = AsyncIOScheduler()
 scheduler.start()
@@ -238,9 +238,9 @@ async def send_weekly():
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
-            host="192.168.200.168",
+            host="0.0.0.0",
             port=8004,
-            reload=True,
+            reload=False,
             log_level="warning"
     )
         
