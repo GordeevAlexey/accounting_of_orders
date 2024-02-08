@@ -245,7 +245,9 @@
 <input name="current_suborder_id" id="current_suborder_id" type="text" hidden>
 
 <script>
-var HOST = "http://10.0.2.47:8004"
+
+let HOST = window.location.origin;
+//var HOST = "http://10.0.2.47:8004"
 // var HOST = "http://192.168.200.92:8004"
 
 $(document).ready(function() {
@@ -493,6 +495,24 @@ function deleteSuborder() {
         document.getElementById('current_suborder_id').value, function(response){
             })
         }
+
+var users = $.get( `${HOST}/get_users`, function(response) {
+        $.each(JSON.parse(response), function(key, value) {
+
+            $('#approving_employee, #initiator, #employee_order, #employee_sub_order, #employee_up, #initiator_up_order, #approving_employee_up_order, #employee_order_up_order')
+            .append($("<option></option>")
+                        .attr("value", value)
+                        .text(value));
+        });
+    });
+
+async function get_report(){
+        url = new URL(`${HOST}/report_by_period`)
+        url.searchParams.append('start_period', document.getElementById('date_start').value);
+        url.searchParams.append('end_period', document.getElementById('date_end').value);
+        window.location.href = url;
+    };
+
 }
 
 </script>
@@ -531,15 +551,7 @@ function deleteSuborder() {
     // var HOST = "http://192.168.200.92:8004"
 
 
-    var users = $.get( `${HOST}/get_users`, function(response) {
-        $.each(JSON.parse(response), function(key, value) {
 
-            $('#approving_employee, #initiator, #employee_order, #employee_sub_order, #employee_up, #initiator_up_order, #approving_employee_up_order, #employee_order_up_order')
-            .append($("<option></option>")
-                        .attr("value", value)
-                        .text(value));
-        });
-    });
 
 
 
@@ -548,12 +560,7 @@ function deleteSuborder() {
 <script>
     var HOST = "http://10.0.2.47:8004"
     // var HOST = "http://192.168.200.92:8004"
-    async function get_report(){
-        url = new URL(`${HOST}/report_by_period`)
-        url.searchParams.append('start_period', document.getElementById('date_start').value);
-        url.searchParams.append('end_period', document.getElementById('date_end').value);
-        window.location.href = url;
-    }
+
 
 </script>
 </body>
