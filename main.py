@@ -17,6 +17,7 @@ from logger.logger import *
 from reports import *
 from schedulers import *
 from send_email import Email
+from fastapi.staticfiles import StaticFiles
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ app.add_middleware(
 
 templates = Jinja2Templates(directory="static", autoescape=False, auto_reload=True)
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.post("/update_order")
 async def update_order(order=Depends(Order)):
