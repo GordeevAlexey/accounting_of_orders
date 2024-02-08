@@ -1,24 +1,22 @@
-from database.pg_db import OrdersTable, SubOrdersTable, UsersTable, Reports
+import logging
 
 import uvicorn
-from fastapi import FastAPI, Form, Depends, HTTPException
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from fastapi import Depends, FastAPI, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from starlette.requests import Request
-from starlette.responses import RedirectResponse, FileResponse
+from starlette.responses import FileResponse, RedirectResponse
 from starlette.templating import Jinja2Templates
 
-from send_email import Email
-from database.utils import Action, employees_to_string
-
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from reports import *
-import logging
-from logger.logger import *
-from database.data import *
-from schedulers import *
 from common import TRUSTED_USERS
-
+from database.data import *
+from database.pg_db import OrdersTable, Reports, SubOrdersTable, UsersTable
+from database.utils import Action, employees_to_string
+from logger.logger import *
+from reports import *
+from schedulers import *
+from send_email import Email
 
 logger = logging.getLogger(__name__)
 
@@ -79,12 +77,12 @@ async def add_order(issue_idx: str = Form(),
         }
 
     OrdersTable().add_order(data)
+    return RedirectResponse("/", status_code=303)
 # @app.post("/add_order")
 # async def add_order(order = Depends(NewOrder)):
 #     o = order.dict()
 #     employees_to_string(o)
 #     OrdersTable().add_order(o)
-    return RedirectResponse("/", status_code=303)
 
 
 @app.post("/add_suborder/{current_order_id}")
