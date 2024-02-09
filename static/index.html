@@ -270,6 +270,16 @@ $(document).ready(function() {
     $('#employee_order_up_order').select2({
         placeholder: "Выбирите ответственного исполнителя"});
 
+        var users = $.get( `${HOST}/get_users`, function(response) {
+                $.each(JSON.parse(response), function(key, value) {
+
+                $('#approving_employee, #initiator, #employee_order, #employee_sub_order, #employee_up, #initiator_up_order, #approving_employee_up_order, #employee_order_up_order')
+                .append($("<option></option>")
+                            .attr("value", value)
+                            .text(value));
+            });
+        });
+
     function link(cell, formatterParams){
         var url = cell.getValue();
         return url;
@@ -490,15 +500,15 @@ function deleteSuborder() {
             })
         }
 
-var users = $.get( `${HOST}/get_users`, function(response) {
-        $.each(JSON.parse(response), function(key, value) {
+// var users = $.get( `${HOST}/get_users`, function(response) {
+//         $.each(JSON.parse(response), function(key, value) {
 
-            $('#approving_employee, #initiator, #employee_order, #employee_sub_order, #employee_up, #initiator_up_order, #approving_employee_up_order, #employee_order_up_order')
-            .append($("<option></option>")
-                        .attr("value", value)
-                        .text(value));
-        });
-    });
+//             $('#approving_employee, #initiator, #employee_order, #employee_sub_order, #employee_up, #initiator_up_order, #approving_employee_up_order, #employee_order_up_order')
+//             .append($("<option></option>")
+//                         .attr("value", value)
+//                         .text(value));
+//         });
+//     });
 
 async function get_report(){
         url = new URL(`${HOST}/report_by_period`)

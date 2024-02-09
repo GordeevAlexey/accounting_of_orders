@@ -1,6 +1,9 @@
 import cx_Oracle_async
 from database.utils import query_from_file
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 IBS_HOST=os.getenv("IBS_HOST")
